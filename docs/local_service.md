@@ -150,7 +150,7 @@ docker logs -f ${PROJECT_NAME}-sample-rabbitmq
 ### 管理画面へのアクセス
 
 - ポートフォワーディング 
-  - `devcontainer-template-sample-rabbitmq:15672`
+  - `web-tutorial-v2-sample-rabbitmq:15672`
 - 管理画面: http://localhost:15672
   - user: `app`
   - password: `pass1234`

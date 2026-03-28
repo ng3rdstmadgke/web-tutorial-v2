@@ -2,13 +2,13 @@
 
 mkdir -p ~/.ssh
 mkdir -p ~/.aws
-mkdir -p ~/.devcontainer-template/.claude
-[ ! -f ~/.devcontainer-template/.claude.json ] && echo '{}' > ~/.devcontainer-template/.claude.json
-mkdir -p ~/.devcontainer-template/.gemini
-mkdir -p ~/.devcontainer-template/.kube
-mkdir -p ~/.devcontainer-template/.config/helm
+mkdir -p ~/.web-tutorial-v2/.claude
+[ ! -f ~/.web-tutorial-v2/.claude.json ] && echo '{}' > ~/.web-tutorial-v2/.claude.json
+mkdir -p ~/.web-tutorial-v2/.gemini
+mkdir -p ~/.web-tutorial-v2/.kube
+mkdir -p ~/.web-tutorial-v2/.config/helm
 
-DOCKER_NETWORK=br-devcontainer-template-${USER}
+DOCKER_NETWORK=br-web-tutorial-v2-${USER}
 NETWORK_EXISTS=$(docker network ls --filter name=$DOCKER_NETWORK --format '{{.Name}}')
 
 if [ -z "$NETWORK_EXISTS" ]; then

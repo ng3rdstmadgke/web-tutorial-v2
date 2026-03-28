@@ -3,14 +3,14 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 # namespace: https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/namespace/
-namespace: devcontainer-template-prod
+namespace: web-tutorial-v2-prod
 
 
 # images: https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/images/
 # nameに一致するコンテナイメージのタグを上書き
 images:
   - name: SAMPLE_APP_REPOSITORY_URL
-    newName: 674582907715.dkr.ecr.ap-northeast-1.amazonaws.com/devcontainer-template/prod/sample-app
+    newName: 674582907715.dkr.ecr.ap-northeast-1.amazonaws.com/web-tutorial-v2/prod/sample-app
     newTag: latest
 
 replicas:

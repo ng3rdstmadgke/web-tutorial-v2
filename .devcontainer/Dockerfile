@@ -90,7 +90,7 @@ RUN wget -O /usr/local/bin/rabbitmqadmin https://github.com/rabbitmq/rabbitmqadm
 RUN curl -LsSf https://astral.sh/uv/install.sh \
   | env UV_INSTALL_DIR=/usr/local/bin UV_NO_MODIFY_PATH=1 sh
 
-ENV UV_PROJECT_ENVIRONMENT="/workspaces/devcontainer-template/.venv"
+ENV UV_PROJECT_ENVIRONMENT="/workspaces/web-tutorial-v2/.venv"
 
 # Node.js インストール
 # https://nodesource.com/products/distributions

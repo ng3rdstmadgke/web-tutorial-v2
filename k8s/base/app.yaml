@@ -40,7 +40,7 @@ spec:
                 name: sample-app-secrets
           env:
             - name: PROJECT_NAME
-              value: devcontainer-template
+              value: web-tutorial-v2
           resources:
             limits:
               memory: "256Mi"
@@ -61,7 +61,7 @@ spec:
                 name: sample-app-secrets
           env:
             - name: PROJECT_NAME
-              value: devcontainer-template
+              value: web-tutorial-v2
           resources:
             limits:
               memory: "256Mi"

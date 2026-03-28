@@ -22,7 +22,7 @@ LOAD postgres;
 -- PostgreSQL への接続情報をシークレットとして作成
 CREATE SECRET (
     TYPE postgres,
-    HOST 'devcontainer-template-sample-postgresql',
+    HOST 'web-tutorial-v2-sample-postgresql',
     PORT 5432,
     DATABASE sample,
     USER 'app',
