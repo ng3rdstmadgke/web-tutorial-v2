@@ -47,5 +47,8 @@
   "statusLine": {
     "type": "command",
     "command": "bash /workspaces/devcontainer-template/.claude/statusline-command.sh"
+  },
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true
   }
 }
