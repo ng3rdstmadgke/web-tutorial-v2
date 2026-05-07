@@ -50,6 +50,18 @@ git checkout chapter01-end
 
 以降、すべてのコマンドは **Dev Container のターミナル内で実行** します。
 
+### このチュートリアルで使う環境変数
+
+Dev Container 内では、以下の環境変数があらかじめ定義されています（`.devcontainer/devcontainer.json` の `containerEnv` で設定）。本文中のコマンド例にも頻出するので、最初に意味を押さえておきましょう。
+
+| 変数 | 値の例 | 用途 |
+|---|---|---|
+| `$PROJECT_DIR` | `/workspaces/web-tutorial-v2` | **Dev Container 内** のプロジェクトルート |
+| `$HOST_DIR` | `/Users/foo/projects/web-tutorial-v2` | **ホスト OS 上** のプロジェクトルート |
+| `$HOST_USER` | `foo` | ホスト OS のユーザー名（コンテナ名・ネットワーク名に使用） |
+
+`$PROJECT_DIR` は Dev Container の中で作業するときの基準パスです。`$HOST_DIR` と `$HOST_USER` は、Dev Container から `docker compose` でコンテナを起動するときに「ホスト OS から見たパス」「他のコンテナと衝突しない命名」のために使います。
+
 ---
 
 ## この章で作るファイル
@@ -71,7 +83,7 @@ web-tutorial-v2/
 
 ## 1. uv とは
 
-[uv](https://docs.astral.sh/uv/) は Rust 製の **Python パッケージマネージャ** です。`pip` や `poetry` の役割を高速に置き換えるツールで、近年の FastAPI プロジェクトで広く採用されています。
+[uv](https://docs.astral.sh/uv/) は Rust 製の **Python パッケージマネージャ** です。`pip` や `poetry` の役割を高速に置き換えるツールで、近年の Python プロジェクトで広く採用されています。
 
 ### `pyproject.toml` と `uv.lock` の役割
 
@@ -86,14 +98,17 @@ Dev Container のターミナルで以下を実行します：
 
 ```bash
 # プロジェクトルートで作業
-cd /workspaces/web-tutorial-v2
+cd $PROJECT_DIR
 
 # backend ディレクトリを作って Python プロジェクトを初期化
 uv init backend --bare --python 3.12
 cd backend
 
+# .python-versionファイル生成してPythonのバージョンを3.12に固定
+uv python pin 3.12
+
 # FastAPI を依存に追加 (--extra standard で Uvicorn など標準ツール一式も同時にインストール)
-uv add fastapi --extra standard
+uv add fastapi~=0.136.1 --extra standard
 ```
 
 実行後、以下のファイルが生成されます：
@@ -102,15 +117,23 @@ uv add fastapi --extra standard
 - `backend/uv.lock` … 解決された全バージョンが記録されている
 - `backend/.python-version` … Python 3.12 を指定
 
-> **`uv init` の `--bare` オプション** は「`main.py` や `README.md` などのサンプルファイルを生成せず、`pyproject.toml` だけを作る」という意味です。今回は自前で `app/main.py` を書くので、サンプルは不要です。
+> **`uv init` の `--bare` オプション**  
+> `main.py` や `README.md` などのサンプルファイルを生成せず、`pyproject.toml` だけを生成します。
 >
-> **`--extra standard` オプション** は FastAPI のオプション機能をまとめてインストールするための指定で、Uvicorn (ASGI サーバ)、HTTPX、ファイル監視ツールなど標準的に使うパッケージが一括で入ります。これは `uv add 'fastapi[standard]'` と同じ意味です。
+
+> **`--extra standard` オプション**  
+> FastAPI のオプション機能をまとめてインストールするための指定で、Uvicornなどの標準的に使うパッケージが一括で入ります。(`uv add 'fastapi[standard]'` と同義)
 
 ---
 
 ## 2. FastAPI の最小コードを書く
 
 `backend/app/` ディレクトリを作り、`main.py` を以下の内容で作成します：
+
+```bash
+mkdir -p $PROJECT_DIR/backend/app
+touch $PROJECT_DIR/backend/app/main.py
+```
 
 ```python
 # backend/app/main.py
@@ -132,6 +155,11 @@ def read_root():
 
 `docker/backend.Dockerfile` を以下の内容で作成します：
 
+```bash
+mkdir -p $PROJECT_DIR/docker
+touch $PROJECT_DIR/docker/backend.Dockerfile
+```
+
 ```dockerfile
 # docker/backend.Dockerfile
 FROM python:3.12-slim
@@ -140,26 +168,26 @@ FROM python:3.12-slim
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # 作業ディレクトリ
-WORKDIR /workspace
+WORKDIR /opt/backend
 
-# 依存定義をコピーして先にインストール (Docker のレイヤーキャッシュを活かす)
+# 依存定義をコピーして先にインストール
 COPY backend/pyproject.toml backend/uv.lock backend/.python-version ./
 RUN uv sync --locked --no-install-project
 
 # アプリのソースコードをコピー
-COPY backend/app ./app
+COPY backend/app /opt/backend/app
 
 # Uvicorn を起動 (--reload で自動リロード)
-CMD ["uv", "run", "uvicorn", "app.main:app", \
-     "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uv", "run", "uvicorn", "app.main:app", "--reload", "--host", "0.0.0.0", "--port", "8000"]
 ```
 
 ### ポイント解説
 
-- **`FROM python:3.12-slim`** … 軽量な Python 3.12 公式イメージを使用
-- **`COPY --from=ghcr.io/astral-sh/uv:latest`** … uv の公式イメージから `uv` バイナリだけを取り出す方式（公式推奨）
-- **`uv sync --locked --no-install-project`** … `uv.lock` が `pyproject.toml` と整合していることを検証した上で、依存パッケージだけを先にインストールする。`--no-install-project` を付けることでアプリ自身のコード（`app/`）はインストールしない。アプリのソースは別レイヤーにコピーすることで、ソース変更時に依存の再インストールが走らないようにしている
-- **`--reload`** … ファイル変更を検知して Uvicorn が自動再起動する開発用フラグ
+- **`COPY --from=ghcr.io/astral-sh/uv:latest`** … uv の公式イメージから `uv` バイナリだけを取り出す方式
+  - 公式推奨: https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
+- **`uv sync --locked --no-install-project`** … `uv.lock` が `pyproject.toml` と整合していることを検証した上で、依存パッケージだけを先にインストール
+  - `--no-install-project` を付けることでアプリ自身のコード（`app/`）はインストールせず、ソース変更時に依存の再インストールが走らないようにしている
+- **`uv run uvicorn ... --reload`** … ファイル変更を検知して Uvicorn が自動再起動する開発用フラグ
 
 ---
 
@@ -167,25 +195,40 @@ CMD ["uv", "run", "uvicorn", "app.main:app", \
 
 プロジェクトルートに `compose.yaml` を作成します：
 
+```bash
+touch $PROJECT_DIR/compose.yaml
+```
+
 ```yaml
 # compose.yaml
 services:
   backend:
+    container_name: web-tutorial-v2-backend-${HOST_USER}
     build:
       context: .
       dockerfile: docker/backend.Dockerfile
     ports:
       - "8000:8000"
     volumes:
-      # ホスト側のソースをコンテナにマウント (ホットリロード用)
-      - ./backend/app:/workspace/app
+      # ホットリロード用にホスト側のディレクトリをマウント
+      - ${HOST_DIR}/backend/app:/opt/backend/app  # ホスト側:コンテナ側
+    networks:
+      # devcontainerと同じネットワークで起動
+      - devcontainer-nw
+networks:
+  devcontainer-nw:
+    external: true
+    name: br-web-tutorial-v2-${HOST_USER}
 ```
 
 ### ポイント解説
 
-- **`build.context: .`** … プロジェクトルートをビルドコンテキストにする。これにより Dockerfile から `backend/` も `docker/` も両方参照できる
-- **`ports: "8000:8000"`** … コンテナの 8000 番ポートをホストの 8000 番にバインド。ホストブラウザから `http://localhost:8000` で接続できる
-- **`volumes`** … `backend/app` をコンテナにマウントすることで、ホスト側でコードを編集すると即座にコンテナにも反映される（`--reload` と組み合わせてホットリロード実現）
+- **`build.context: .`**  
+プロジェクトルートをビルドコンテキストにします。これにより Dockerfile から `backend/` も `docker/` も両方参照できる
+- **`ports: "8000:8000"`**  
+コンテナの 8000 番ポートをホストの 8000 番にバインド。ホストブラウザから `http://localhost:8000` で接続できる
+- **`volumes`**  
+ホスト側のプロジェクトディレクトリ (`$HOST_DIR/backend/app`) をコンテナにマウントすることで、ホスト側でのコードの変更を即座にコンテナに反映する（`--reload` と組み合わせてホットリロード実現）
 
 > **なぜルート直下に `compose.yaml` を置くのか？**
 > Docker Compose v2 では `docker compose up` を引数なしで叩くと、カレントディレクトリの `compose.yaml` を自動で読みます。プロジェクトルートに置くことで、どこから起動しても迷いません。
@@ -198,29 +241,86 @@ Dev Container のターミナルで以下を実行：
 
 ```bash
 # プロジェクトルートで実行
-cd /workspaces/web-tutorial-v2
+cd $PROJECT_DIR
 
-# ビルドして起動 (-d でバックグラウンド)
+# 既存コンテナを破棄して、最新の設定でビルドしてバックグラウンド起動
+docker compose down
 docker compose up -d --build
 
 # 起動状態を確認
 docker compose ps
+# NAME                              IMAGE                     COMMAND                  SERVICE   CREATED         STATUS         PORTS
+# web-tutorial-v2-backend-ktamido   web-tutorial-v2-backend   "uv run uvicorn app.…"   backend   7 minutes ago   Up 7 minutes   0.0.0.0:8000->8000/tcp, [::]:8000->8000/tc
 ```
 
 `STATUS` が `Up` になっていれば起動成功です。
 
 ### Hello World を確認
 
+#### Dev Container 内のターミナルから
+
+Dev Container と FastAPI コンテナは **同じ Docker ネットワーク** に所属しているので、コンテナ名で直接アクセスできます。
+
 ```bash
-curl http://localhost:8000
-# => {"message":"Hello World"}
+curl http://web-tutorial-v2-backend-${HOST_USER}:8000
+# {"message":"Hello World"}
 ```
 
-ホスト側のブラウザで `http://localhost:8000` を開いても同じ JSON が表示されます。
+#### ホスト OS のブラウザから
+
+`compose.yaml` の `ports: "8000:8000"` でホスト OS のポートに公開しているので、ホスト OS のブラウザから `http://localhost:8000` でアクセスできます。
+
+<img src="img/fastapi_01.png" width="700px">
+
+#### 補足: ネットワーク構成
+
+ここで「なぜ `localhost` でも動いて、コンテナ名でも動くのか？」を整理しておきます。Dev Container と FastAPI コンテナは、ホスト OS 上で動く **同じ Docker bridge ネットワーク** に接続されています。
+
+```
+                                                ホスト OS の :8000 へ公開
+                                                  (ports: "8000:8000")
+                                                          ▲
+                                                          │
+┌─ Host OS ───────────────────────────────────────────────┼──────────┐
+│                                                         │          │
+│    ┌─────────────────┐                ┌─────────────────────────┐  │
+│    │ Dev Container   │                │ FastAPI Container       │  │
+│    │                 │                │ web-tutorial-v2-backend-│  │
+│    │                 │                │ ${HOST_USER}            │  │
+│    │                 │                │ :8000                   │  │
+│    └────────┬────────┘                └────────────┬────────────┘  │
+│             │                                      │               │
+│             │                                      │               │
+│             └──────────────────┬───────────────────┘               │
+│                                │                                   │
+│              ┌─────────────────┴─────────────────┐                 │
+│              │ Docker bridge network             │                 │
+│              │ br-web-tutorial-v2-${HOST_USER}   │                 │
+│              └───────────────────────────────────┘                 │
+│                                                                    │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+- Dev Container は `.devcontainer/devcontainer.json` の `runArgs: ["--network=br-web-tutorial-v2-${localEnv:USER}"]` でこのネットワークに参加している
+- FastAPI コンテナは `compose.yaml` の `networks: [devcontainer-nw]` で同じネットワークに参加している
+- 同一ネットワーク内ではコンテナ名が DNS で解決されるため、Dev Container から `web-tutorial-v2-backend-${HOST_USER}` という名前で FastAPI コンテナに到達できる
+
+| アクセス元 | 使えるアドレス | 仕組み |
+|---|---|---|
+| ホスト OS のブラウザ | `http://localhost:8000` | `compose.yaml` の `ports` でホスト OS にポート公開している |
+| Dev Container のターミナル | `http://web-tutorial-v2-backend-${HOST_USER}:8000` | 同じ Docker ネットワーク内なのでコンテナ名で名前解決できる |
+| Dev Container のターミナル | `http://localhost:8000` | ❌ Dev Container 自身の 8000 番を見にいくので届かない |
+
+「Dev Container から `localhost:8000` で繋がらない」のはよくあるハマりどころです。**Dev Container は独立したコンテナ**なので、その中の `localhost` は Dev Container 自身を指します。FastAPI コンテナにアクセスするには、コンテナ名を使うか、ホスト OS のブラウザを使ってください。
 
 ### Swagger UI も確認
 
-FastAPI は **OpenAPI ドキュメントを自動生成** します。`http://localhost:8000/docs` を開いてみてください。`GET /` のエンドポイントが一覧に表示され、ブラウザから直接 API を実行できます。これだけでも FastAPI の便利さの一端が見えます。
+FastAPI は **OpenAPI ドキュメントを自動生成** します。`http://localhost:8000/docs` を開いてみてください。  
+`GET /` のエンドポイントが一覧に表示され、ブラウザから直接 API を実行できます。
+
+<img src="img/swagger_ui_01.png" width="700px">
+
+<img src="img/swagger_ui_02.png" width="700px">
 
 ### ホットリロードを試す
 
@@ -242,30 +342,25 @@ WARNING:  WatchFiles detected changes in 'app/main.py'. Reloading...
 
 ### 停止する
 
+`docker compose up` をフォアグラウンドで実行している場合、まずターミナルで `Ctrl+C` を押してプロセスに停止シグナルを送ります。これでコンテナの **動作** が止まります。
+
+ただし `Ctrl+C` だけだと **コンテナ自体は停止状態で残った** ままです（`docker compose ps` で確認できる）。これを完全に削除したい場合は、別ターミナルから以下を実行します。
+
 ```bash
+# プロジェクトルートで実行
+cd $PROJECT_DIR
+
+# コンテナとネットワークを停止・削除する
 docker compose down
 ```
 
+| コマンド | 効果 |
+|---|---|
+| `Ctrl+C` | フォアグラウンド実行中のコンテナを停止する（コンテナは残る） |
+| `docker compose stop` | バックグラウンド実行中のコンテナを停止する（コンテナは残る） |
+| `docker compose down` | コンテナを停止して **削除** する（compose で作ったネットワークも削除） |
+
 ---
-
-## まとめ
-
-この章では以下を学びました：
-
-- Dev Container を使えば、学習に必要なツールが揃った環境にすぐ入れる
-- **uv** は高速な Python パッケージマネージャで、`pyproject.toml` と `uv.lock` で依存を管理する
-- Dockerfile で uv 公式イメージから `uv` バイナリをコピーする手法
-- Docker Compose の `volumes` と Uvicorn の `--reload` を組み合わせて **ホットリロード** を実現する
-- FastAPI は **`/docs` で OpenAPI ドキュメントを自動生成** する
-
-## 学習チェックリスト
-
-以下の問いに自分の言葉で答えられるか確認してみましょう：
-
-- [ ] `pyproject.toml` と `uv.lock` の違いは？ なぜ両方が必要なのか？
-- [ ] Dockerfile で「依存をインストール → ソースをコピー」の順にする理由は？
-- [ ] `volumes` でマウントしているのに、ホットリロードが動かない場合に最初に疑うところは？
-- [ ] `docker compose up` と `docker compose up -d` の違いは？
 
 ## 次の章
 
