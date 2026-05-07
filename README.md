@@ -26,16 +26,15 @@
 
 ## 進め方
 
-このリポジトリは **1 つのリポジトリを章ごとに育てていく** 方式です。各章には `chapter{NN}-start` / `chapter{NN}-end` の git tag が打たれているので、好きな章から始められます。
+このリポジトリは **1 つのリポジトリを章ごとに育てていく** 方式です。開始地点に `start` タグ、各章末に `chapter{NN}-end` タグが打たれているので、好きな章から始められます (ある章を始めるには前章の `-end` をチェックアウトします)。
+
+学習は **自分の private リポジトリ**で進めます (Chapter 15 で自分の環境固有値を commit するため)。private リポジトリの用意のしかたは [Chapter 1](docs/chapter01/README.md) で説明します。
 
 ```bash
-# このリポジトリをフォーク・クローンしたあと
-git fetch --tags
+# private リポジトリを用意したあと、チュートリアルの開始地点へ移動
+git checkout start
 
-# Chapter 1 の開始地点に移動
-git checkout chapter01-start
-
-# 学習を進める。詰まったら答えを見たい場合は完成形に切り替え
+# 各章の完成形 (答え) を見たいとき
 git checkout chapter01-end
 ```
 
