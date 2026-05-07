@@ -1,6 +1,7 @@
 tmp/
 react-playground/
 core
+.env
 
 # AI
 .gemini/
@@ -18,3 +19,5 @@ agent-tasks/
 __pycache__/
 *.py[codz]
 *$py.class
+.Trash-*/
+.ipynb_checkpoints/
