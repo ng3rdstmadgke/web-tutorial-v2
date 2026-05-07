@@ -1,0 +1,19 @@
+name: web-tutorial-v2-${HOST_USER} 
+services:
+  backend:
+    container_name: web-tutorial-v2-backend-${HOST_USER}
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      # ホットリロード用にホスト側のディレクトリをマウント
+      - ${HOST_DIR}/backend/app:/opt/backend/app  # ホスト側:コンテナ側
+    networks:
+      # devcontainerと同じネットワークで起動
+      - devcontainer-nw
+networks:
+  devcontainer-nw:
+    external: true
+    name: br-web-tutorial-v2-${HOST_USER}
