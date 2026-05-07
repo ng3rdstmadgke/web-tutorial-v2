@@ -1,6 +1,7 @@
 tmp/
 react-playground/
 core
+.env
 
 # --- --- --- AI --- --- ---
 .gemini/
