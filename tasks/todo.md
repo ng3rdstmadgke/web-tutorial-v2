@@ -150,7 +150,7 @@ web-tutorial-v2/
 
 ### 第1部: バックエンド基礎
 
-- [ ] **Chapter 1: 開発環境セットアップ (Docker Compose)**
+- [x] **Chapter 1: 開発環境セットアップ (Docker Compose)**
   - **ゴール:** `docker compose up` で FastAPI が起動し、`http://localhost:8000` で Hello World が返る。コードを書き換えるとホットリロードする。
   - プロジェクト構成の説明
   - **uv とは / `pyproject.toml` / `uv.lock` の役割**
