@@ -1,1 +1,0 @@
-bucket         = "my-tfstate-bucket"

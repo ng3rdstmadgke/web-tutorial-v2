@@ -2,12 +2,6 @@
 tmp/
 core
 
-# terraform
-terraform/.tfplan/
-terraform/.tfstate/
-terraform/.terraform/
-**/backend.hcl
-
 # AI
 .gemini/
 .claude/*.local.*

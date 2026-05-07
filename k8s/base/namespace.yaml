@@ -1,6 +1,0 @@
----
-# ネームスペース
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: web-tutorial-v2
