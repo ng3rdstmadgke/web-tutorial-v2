@@ -1,4 +1,3 @@
-.venv/
 tmp/
 core
 
@@ -9,3 +8,11 @@ core
 .serena/
 .playwright-mcp/
 .devcontainer/.env
+
+
+# --- --- --- backend --- --- ---
+# Byte-compiled / optimized / DLL files
+.venv/
+__pycache__/
+*.py[codz]
+*$py.class
