@@ -353,4 +353,3 @@ docker compose down
 ## 次の章
 
 [Chapter 2: FastAPI 入門 →](../chapter02/README.md)
-（公開され次第リンクが有効になります）
