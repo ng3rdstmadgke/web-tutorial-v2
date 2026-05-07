@@ -25,7 +25,6 @@
   },
 
   "forwardPorts": [
-    "sample-app-${localEnv:USER}:8000"
   ],
 
   "mounts": [
@@ -35,7 +34,6 @@
       "source=${localEnv:HOME}/.web-tutorial-v2/.config/helm/,target=/home/vscode/.config/helm/,type=bind,consistency=cached",
       "source=${localEnv:HOME}/.web-tutorial-v2/.claude/,target=/home/vscode/.claude/,type=bind,consistency=cached",
       "source=${localEnv:HOME}/.web-tutorial-v2/.claude.json,target=/home/vscode/.claude.json,type=bind,consistency=cached",
-      "source=${localEnv:HOME}/.web-tutorial-v2/.gemini/,target=/home/vscode/.gemini/,type=bind,consistency=cached"
   ],
 
   // devcontainerに追加する機能の定義
@@ -91,31 +89,12 @@
         "bierner.markdown-mermaid",
         "jebbs.plantuml",
 
-        // Terraform
-        "hashicorp.hcl",
-        "hashicorp.terraform",
-        "saramorillon.terraform-graph",
-
         // Python
         "ms-python.vscode-pylance",
         "ms-python.black-formatter",
         "matangover.mypy",
         "charliermarsh.ruff",
         "ms-toolsai.jupyter",
-
-        // Copilot
-        "GitHub.copilot",
-        "GitHub.copilot-chat",
-
-        // Codex
-        "openai.chatgpt",
-
-        // Claude
-        "anthropic.claude-code",
-
-        // Gemini
-        "google.gemini-cli-vscode-ide-companion",
-        "google.geminicodeassist",
 
         // Others
         "ms-vscode.makefile-tools",

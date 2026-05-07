@@ -4,7 +4,6 @@ mkdir -p ~/.ssh
 mkdir -p ~/.aws
 mkdir -p ~/.web-tutorial-v2/.claude
 [ ! -f ~/.web-tutorial-v2/.claude.json ] && echo '{}' > ~/.web-tutorial-v2/.claude.json
-mkdir -p ~/.web-tutorial-v2/.gemini
 mkdir -p ~/.web-tutorial-v2/.kube
 mkdir -p ~/.web-tutorial-v2/.config/helm
 
