@@ -28,14 +28,13 @@
 
 このリポジトリは **1 つのリポジトリを章ごとに育てていく** 方式です。各章には `chapter{NN}-start` / `chapter{NN}-end` の git tag が打たれているので、好きな章から始められます。
 
-```bash
-# このリポジトリをフォーク・クローンしたあと
-git fetch --tags
+学習は **自分の private リポジトリ**で進めます (Chapter 15 で自分の環境固有値を commit するため)。private リポジトリの用意のしかたは [Chapter 1](docs/chapter01/README.md) で説明します。
 
-# Chapter 1 の開始地点に移動
+```bash
+# private リポジトリを用意したあと、章の開始地点へ移動
 git checkout chapter01-start
 
-# 学習を進める。詰まったら答えを見たい場合は完成形に切り替え
+# 詰まったら完成形に切り替えて答えを確認
 git checkout chapter01-end
 ```
 
