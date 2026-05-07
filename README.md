@@ -4,11 +4,6 @@
 
 章ごとに段階的にアプリを育てていく構成になっており、各章末で「動くアプリ」を確認できます。
 
-## 対象読者
-
-- これから Web アプリ開発を始めたい方
-- フロントエンドからバックエンド、デプロイまでフルスタックで一通り触ってみたい方
-
 ## 技術スタック
 
 | 領域 | 採用技術 |
@@ -24,31 +19,42 @@
 | 認証 | 自前 ID/PW + JWT → Keycloak + 自前 OIDC |
 | 開発環境 | Docker Compose + VS Code Dev Container |
 
-## 進め方
-
-このリポジトリは **1 つのリポジトリを章ごとに育てていく** 方式です。各章には `chapter{NN}-start` / `chapter{NN}-end` の git tag が打たれているので、好きな章から始められます。
-
-```bash
-# このリポジトリをフォーク・クローンしたあと
-git fetch --tags
-
-# Chapter 1 の開始地点に移動
-git checkout chapter01-start
-
-# 学習を進める。詰まったら答えを見たい場合は完成形に切り替え
-git checkout chapter01-end
-```
-
-### 必要な環境
-
-- **Docker** (Docker Desktop または Docker Engine)
-- **VS Code** + **Dev Containers 拡張**
-
-学習者は **必ず Dev Container 上で作業する** 前提です。ホスト OS には Docker と VS Code さえ入っていれば、その他のツール（Python、Node.js、uv など）は Dev Container がすべて用意します。
-
 ## 目次
 
-[**docs/README.md**](docs/README.md) を参照してください。
+### 第1部: バックエンド基礎
+
+- [Chapter 1: 開発環境セットアップ (Docker Compose)](docs/chapter01/README.md)
+- [Chapter 2: FastAPI 入門](docs/chapter02/README.md)
+- [Chapter 3: PostgreSQL + SQLAlchemy](docs/chapter03/README.md)
+- [Chapter 4: Alembic によるマイグレーション](docs/chapter04/README.md)
+- [Chapter 5: CRUD API の実装](docs/chapter05/README.md)
+- [Chapter 6: 認証・認可(自前 ID/PW)](docs/chapter06/README.md)
+- [Chapter 7: 構造化ログとエラーハンドリング](docs/chapter07/README.md)
+- [Chapter 8: API テスト (pytest)](docs/chapter08/README.md)
+
+### 第2部: フロントエンド
+
+- [Chapter 9: React / Next.js の基礎](docs/chapter09/README.md)
+- [Chapter 10: Next.js 入門 + Tailwind CSS 基礎](docs/chapter10/README.md)
+- [Chapter 11: OpenAPI 駆動の型生成 + ログインページの実装](docs/chapter11/README.md)
+- [Chapter 12: CRUD 画面の実装](docs/chapter12/README.md)
+- [Chapter 13: E2E テスト (Playwright)](docs/chapter13/README.md)
+
+### 第3部: 運用・公開
+
+- [Chapter 14: GitHub Actions で CI](docs/chapter14/README.md)
+- [Chapter 15: k8s (EKS) へのデプロイ](docs/chapter15/README.md)
+
+### 第4部: 発展
+
+- Chapter 16: Keycloak + 自前 OIDC 実装
+
+### Appendix
+
+- [Appendix](docs/appendix/README.md)
+
+ 
+
 
 ## ライセンス
 
