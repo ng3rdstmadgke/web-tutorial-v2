@@ -5,7 +5,7 @@
 ## 第1部: バックエンド基礎
 
 - [Chapter 1: 開発環境セットアップ (Docker Compose)](chapter01/README.md)
-- Chapter 2: FastAPI 入門
+- [Chapter 2: FastAPI 入門](chapter02/README.md)
 - Chapter 3: PostgreSQL + SQLAlchemy
 - Chapter 4: Alembic によるマイグレーション
 - Chapter 5: CRUD API の実装
