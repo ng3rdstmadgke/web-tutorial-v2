@@ -311,16 +311,6 @@ class UserRole(Base):
     updated: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
 ```
 
-### DB 側のカラム型を明示する
-
-`mapped_column(...)` の **第 1 引数** には、SQLAlchemy のカラム型を渡せます。本教材では「**暗黙より明示**」の方針で、すべてのカラムに型を明示しています。
-
-| Python 型 | 暗黙の SQLAlchemy 型 | 明示する型の例 | DB 側の型（PostgreSQL） |
-|---|---|---|---|
-| `int` | `Integer` | `Integer` | `INTEGER` |
-| `str` | `String`（長さ無し VARCHAR） | `String(255)` 等 | `VARCHAR(255)` |
-| `datetime` | `DateTime`（タイムゾーン無し） | `DateTime(timezone=True)` | `TIMESTAMP WITH TIME ZONE` (`TIMESTAMPTZ`) |
-
 ### 解説
 
 - **`Integer`** は明示しなくても `Mapped[int]` から推論されますが、**他の型と表記を揃える**ために明示しています
