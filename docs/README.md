@@ -6,7 +6,7 @@
 
 - [Chapter 1: 開発環境セットアップ (Docker Compose)](chapter01/README.md)
 - [Chapter 2: FastAPI 入門](chapter02/README.md)
-- Chapter 3: PostgreSQL + SQLAlchemy
+- [Chapter 3: PostgreSQL + SQLAlchemy](chapter03/README.md)
 - Chapter 4: Alembic によるマイグレーション
 - Chapter 5: CRUD API の実装
 - Chapter 6: 認証・認可（自前 ID/PW）
