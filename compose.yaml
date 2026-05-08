@@ -5,13 +5,20 @@ services:
     build:
       context: .
       dockerfile: docker/backend.Dockerfile
-    ports:
-      - "8000:8000"
     volumes:
       # ホットリロード用にホスト側のディレクトリをマウント
       - ${HOST_DIR}/backend/app:/opt/backend/app  # ホスト側:コンテナ側
     networks:
       # devcontainerと同じネットワークで起動
+      - devcontainer-nw
+  db:
+    container_name: web-tutorial-v2-db-${HOST_USER}
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app_pass
+      POSTGRES_DB: app
+    networks:
       - devcontainer-nw
 networks:
   devcontainer-nw:
