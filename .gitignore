@@ -1,5 +1,6 @@
 tmp/
 core
+.env
 
 # AI
 .gemini/
@@ -16,3 +17,5 @@ core
 __pycache__/
 *.py[codz]
 *$py.class
+.Trash-*/
+.ipynb_checkpoints/

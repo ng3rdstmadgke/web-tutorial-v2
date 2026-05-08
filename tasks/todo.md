@@ -160,7 +160,7 @@ web-tutorial-v2/
   - **補足コラム:** VS Code ユーザー向けの devcontainer の話（本筋はターミナル/任意エディタから動く構成）
   - ※ FastAPI 本体は写経で最小ファイル（Hello World）を置くだけ。ルーティング・Pydantic・OpenAPI の解説は Chapter 2 に集約。
 
-- [ ] **Chapter 2: FastAPI入門**
+- [x] **Chapter 2: FastAPI入門**
   - ルーティング、パスパラメータ、クエリ、リクエストボディ
   - Pydantic v2 によるバリデーション
   - 自動生成される OpenAPI / Swagger UI を確認
