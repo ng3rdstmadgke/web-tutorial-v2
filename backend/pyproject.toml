@@ -3,8 +3,10 @@ name = "backend"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
+    "alembic~=1.18.4",
     "fastapi[standard]>=0.136.1",
     "psycopg[binary]~=3.3.4",
+    "pydantic-settings~=2.14.0",
     "python-dotenv~=1.2.2",
     "sqlalchemy~=2.0.49",
 ]
