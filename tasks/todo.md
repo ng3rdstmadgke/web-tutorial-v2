@@ -165,7 +165,7 @@ web-tutorial-v2/
   - Pydantic v2 によるバリデーション
   - 自動生成される OpenAPI / Swagger UI を確認
 
-- [ ] **Chapter 3: PostgreSQL + SQLAlchemy**
+- [x] **Chapter 3: PostgreSQL + SQLAlchemy**
   - **`compose.yaml` に `db` サービス（PostgreSQL）を追加**
   - 生SQL で基本操作 → SQLAlchemy 2.x スタイル（`Mapped[...]`, `session.execute(select(...))`）
   - セッション管理の考え方
@@ -248,6 +248,16 @@ web-tutorial-v2/
   - OIDC Authorization Code Flow + PKCE を自前実装で理解する
   - Chapter 6 の自前認証をリプレイス
   - 「なぜライブラリに頼らず書くのか」＝プロトコル理解のため
+
+- [ ] **Chapter 18: 画像アップロード機能 (構想)**
+  - Chapter 4 で `users.avatar_url` カラムを追加するが、本章までは外部 URL を貼る前提で運用
+  - 本章で **アプリケーションからの画像アップロード・配信** を本格実装
+  - 検討事項:
+    - 保存先: ローカルファイルシステム (`backend/uploads/`) / S3 互換 (MinIO) / DB BLOB のいずれか
+    - 配信: FastAPI `StaticFiles` / 署名付き URL / Next.js 経由
+    - バリデーション: ファイルサイズ・MIME タイプ・拡張子チェック
+    - 画像のリサイズ・サムネイル生成（Pillow など）
+    - k8s デプロイ時のストレージ戦略（PV か外部オブジェクトストレージか）
 
 ## 次のステップ
 
