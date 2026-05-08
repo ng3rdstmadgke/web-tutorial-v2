@@ -12,6 +12,17 @@ services:
     networks:
       # devcontainerと同じネットワークで起動
       - devcontainer-nw
+  db:
+    container_name: web-tutorial-v2-db-${HOST_USER}
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app_pass
+      POSTGRES_DB: app
+    ports:
+      - "5432:5432"
+    networks:
+      - devcontainer-nw
 networks:
   devcontainer-nw:
     external: true
