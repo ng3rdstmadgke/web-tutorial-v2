@@ -170,7 +170,7 @@ web-tutorial-v2/
   - 生SQL で基本操作 → SQLAlchemy 2.x スタイル（`Mapped[...]`, `session.execute(select(...))`）
   - セッション管理の考え方
 
-- [ ] **Chapter 4: Alembic によるマイグレーション**
+- [x] **Chapter 4: Alembic によるマイグレーション**
   - モデル変更 → リビジョン生成 → apply の流れ
   - なぜ手動 ALTER ではダメか
 

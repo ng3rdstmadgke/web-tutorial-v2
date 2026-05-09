@@ -8,7 +8,7 @@
 - [Chapter 2: FastAPI 入門](chapter02/README.md)
 - [Chapter 3: PostgreSQL + SQLAlchemy](chapter03/README.md)
 - [Chapter 4: Alembic によるマイグレーション](chapter04/README.md)
-- Chapter 5: CRUD API の実装
+- [Chapter 5: CRUD API の実装](chapter05/README.md)
 - Chapter 6: 認証・認可（自前 ID/PW）
 - Chapter 7: 構造化ログとエラーハンドリング
 - Chapter 8: API テスト (pytest)
