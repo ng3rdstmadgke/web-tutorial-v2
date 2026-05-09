@@ -4,11 +4,37 @@ services:
     build:
       context: .
       dockerfile: docker/backend.Dockerfile
+    env_file:
+      - backend/.env
     volumes:
       # ホットリロード用にホスト側のディレクトリをマウント
       - ${HOST_DIR}/backend/app:/opt/backend/app  # ホスト側:コンテナ側
+    depends_on:
+      # migrate(マイグレーション+シード)が正常終了してから起動する
+      migrate:
+        condition: service_completed_successfully
     networks:
       # devcontainerと同じネットワークで起動
+      - devcontainer-nw
+  migrate:
+    # 起動時に一度だけ alembic upgrade head + seed を実行するワンショットサービス
+    container_name: web-tutorial-v2-migrate-${HOST_USER}
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    env_file:
+      - backend/.env
+    volumes:
+      # app に加えて alembic 一式もマウントする(マイグレーションの適用に必要)
+      - ${HOST_DIR}/backend/app:/opt/backend/app
+      - ${HOST_DIR}/backend/alembic:/opt/backend/alembic
+      - ${HOST_DIR}/backend/alembic.ini:/opt/backend/alembic.ini
+    command: ["sh", "-c", "uv run alembic upgrade head && uv run python -m app.seed"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    networks:
       - devcontainer-nw
   db:
     container_name: web-tutorial-v2-db-${HOST_USER}
@@ -17,6 +43,12 @@ services:
       POSTGRES_USER: app
       POSTGRES_PASSWORD: app_pass
       POSTGRES_DB: app
+    healthcheck:
+      # migrate / backend が起動を待てるように疎通確認する
+      test: ["CMD-SHELL", "pg_isready -U app -d app"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     networks:
       - devcontainer-nw
 networks:
