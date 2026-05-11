@@ -19,6 +19,9 @@ class Environment(BaseSettings):
     # Cookie 設定
     cookie_secure: bool = False  # 本番は True (HTTPS 必須)
 
+    # ログフォーマット
+    log_format: str = "json"  # "json" or "console"
+
     @property
     def database_url(self) -> str:
         """SQLAlchemy 用の接続 URL を組み立てる"""
