@@ -10,7 +10,7 @@
 - [Chapter 4: Alembic によるマイグレーション](chapter04/README.md)
 - [Chapter 5: CRUD API の実装](chapter05/README.md)
 - [Chapter 6: 認証・認可（自前 ID/PW）](chapter06/README.md)
-- Chapter 7: 構造化ログとエラーハンドリング
+- [Chapter 7: 構造化ログとエラーハンドリング](chapter07/README.md)
 - Chapter 8: API テスト (pytest)
 
 ## 第2部: フロントエンド
