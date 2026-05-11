@@ -15,7 +15,7 @@
 
 ## 第2部: フロントエンド
 
-- Chapter 9: JS/TS おさらい (外部リンク集)
+- [Chapter 9: JS/TS おさらい (外部リンク集)](chapter09/README.md)
 - Chapter 10: Next.js 入門 + Tailwind CSS 基礎
 - Chapter 11: OpenAPI 駆動の型生成
 - Chapter 12: ログインページの実装
