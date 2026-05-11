@@ -11,7 +11,7 @@
 - [Chapter 5: CRUD API の実装](chapter05/README.md)
 - [Chapter 6: 認証・認可（自前 ID/PW）](chapter06/README.md)
 - [Chapter 7: 構造化ログとエラーハンドリング](chapter07/README.md)
-- Chapter 8: API テスト (pytest)
+- [Chapter 8: API テスト (pytest)](chapter08/README.md)
 
 ## 第2部: フロントエンド
 
