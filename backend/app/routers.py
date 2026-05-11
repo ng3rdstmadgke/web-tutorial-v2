@@ -1,3 +1,7 @@
+import structlog
+
+logger = structlog.get_logger()
+
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -16,7 +20,7 @@ router = APIRouter()
 def create_user(
     data: UserCreate,
     session: Session = Depends(get_session),
-    current_user: User = Depends(require_permissions([PermissionType.USER_CREATE])),
+    _: User = Depends(require_permissions([PermissionType.USER_CREATE])),
 ) -> User:
     # ユーザー名の重複チェック
     existing = session.execute(
@@ -50,6 +54,8 @@ def create_user(
     session.add(user)
     session.commit()
     session.refresh(user)
+    # ビジネスイベントのログ
+    logger.info("user_created", user_id=user.id, username=user.username)
     return user
 
 @router.get("/users/{user_id}", response_model=UserRead)
@@ -271,3 +277,7 @@ def delete_item(
     check_resource_ownership(owner_id=item.user_id, current_user=current_user)
     session.delete(item)
     session.commit()
+
+@router.get("/test-error")
+def test_error():
+    raise RuntimeError("This is a test error")
