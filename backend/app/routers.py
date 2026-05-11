@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.config import env
 from app import auth
-from app.model import Role, User
-from app.schemas import UserCreate, UserRead, UserUpdate
+from app.model import Role, RoleType, User, Item
+from app.schemas import UserCreate, UserRead, UserUpdate, UserLogin, ItemCreate, ItemRead, ItemUpdate
 from app.session import get_session
+from app.permissions import PermissionType, require_permissions, check_resource_ownership, has_role
 
 router = APIRouter()
 
@@ -14,6 +16,7 @@ router = APIRouter()
 def create_user(
     data: UserCreate,
     session: Session = Depends(get_session),
+    current_user: User = Depends(require_permissions([PermissionType.USER_CREATE])),
 ) -> User:
     # ユーザー名の重複チェック
     existing = session.execute(
@@ -53,6 +56,7 @@ def create_user(
 def read_user(
     user_id: int,
     session: Session = Depends(get_session),
+    _: User = Depends(require_permissions([PermissionType.USER_READ])),
 ) -> User:
     user = session.execute(
         select(User).where(User.id == user_id)
@@ -69,6 +73,7 @@ def read_users(
     skip: int = 0,
     limit: int = 100,
     session: Session = Depends(get_session),
+    _: User = Depends(require_permissions([PermissionType.USER_READ])),
 ) -> list[User]:
     users = session.execute(
         select(User).offset(skip).limit(limit).order_by(User.id)
@@ -81,6 +86,7 @@ def update_user(
     user_id: int,
     data: "UserUpdate",
     session: Session = Depends(get_session),
+    _: User = Depends(require_permissions([PermissionType.USER_UPDATE])),
 ) -> User:
     user = session.execute(
         select(User).where(User.id == user_id)
@@ -118,6 +124,7 @@ def update_user(
 def delete_user(
     user_id: int,
     session: Session = Depends(get_session),
+    _: User = Depends(require_permissions([PermissionType.USER_DELETE])),
 ) -> None:
     user = session.execute(
         select(User).where(User.id == user_id)
@@ -128,4 +135,139 @@ def delete_user(
             detail=f"User not found (id={user_id})",
         )
     session.delete(user)
+    session.commit()
+
+@router.post("/login")
+def login(
+    response: Response,
+    data: UserLogin,
+    session: Session = Depends(get_session),
+):
+    """ユーザー名とパスワードでログインし、JWT トークンを発行する"""
+    user = session.execute(
+        select(User).where(User.username == data.username)
+    ).scalar_one_or_none()
+
+    if user is None or not auth.verify_password(data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+        )
+
+    # JWT を生成
+    token = auth.create_access_token(user.username)
+
+    # Cookie にセット (ブラウザ用)
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,       # JS からアクセス不可 (XSS 対策)
+        samesite="lax",     # CSRF 対策 (異なるサイトからの POST ではCookieを送らない)
+        secure=env.cookie_secure,  # 本番は True (HTTPS でのみCookieを送信する)
+        max_age=env.token_expire_minutes * 60,  # 秒単位
+    )
+
+    # レスポンスボディにも返す (API クライアント / curl 用)
+    return {"access_token": token, "token_type": "bearer"}
+
+
+@router.post("/logout")
+def logout(response: Response):
+    """Cookie を削除してログアウトする"""
+    response.delete_cookie(key="access_token")
+    return {"detail": "Logged out"}
+
+
+# === Item CRUD ===
+
+@router.post("/items/", response_model=ItemRead, status_code=status.HTTP_201_CREATED)
+def create_item(
+    data: ItemCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(require_permissions([PermissionType.ITEM_CREATE])),
+) -> Item:
+    """ログインユーザーのアイテムを作成する"""
+    item = Item(title=data.title, content=data.content)
+    current_user.items.append(item)
+    session.add(current_user)
+    session.commit()
+    session.refresh(item)
+    return item
+
+
+@router.get("/items/", response_model=list[ItemRead])
+def read_items(
+    skip: int = 0,
+    limit: int = 100,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(require_permissions([PermissionType.ITEM_READ])),
+) -> list[Item]:
+    """ログインユーザーのアイテム一覧を取得する。
+    SYSTEM_ADMIN は全ユーザーのアイテムを取得できる。
+    """
+    query = select(Item)
+    if not has_role(current_user, RoleType.SYSTEM_ADMIN):
+        # 一般ユーザーは自分のアイテムのみ
+        query = query.where(Item.user_id == current_user.id)
+    items = session.execute(
+        query.offset(skip).limit(limit).order_by(Item.id)
+    ).scalars().all()
+    return list(items)
+
+
+@router.get("/items/{item_id}", response_model=ItemRead)
+def read_item(
+    item_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(require_permissions([PermissionType.ITEM_READ])),
+) -> Item:
+    """アイテムを取得する。自分のアイテムか SYSTEM_ADMIN のみ"""
+    item = session.execute(
+        select(Item).where(Item.id == item_id)
+    ).scalar_one_or_none()
+    if item is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+    check_resource_ownership(owner_id=item.user_id, current_user=current_user)
+    return item
+
+
+@router.patch("/items/{item_id}", response_model=ItemRead)
+def update_item(
+    item_id: int,
+    data: ItemUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(require_permissions([PermissionType.ITEM_UPDATE])),
+) -> Item:
+    """アイテムを更新する。自分のアイテムか SYSTEM_ADMIN のみ"""
+    item = session.execute(
+        select(Item).where(Item.id == item_id)
+    ).scalar_one_or_none()
+    if item is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+    check_resource_ownership(owner_id=item.user_id, current_user=current_user)
+
+    if data.title is not None:
+        item.title = data.title
+    if data.content is not None:
+        item.content = data.content
+    session.add(item)
+    session.commit()
+    session.refresh(item)
+    return item
+
+
+@router.delete("/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_item(
+    item_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(require_permissions([PermissionType.ITEM_DELETE])),
+) -> None:
+    """アイテムを削除する。自分のアイテムか SYSTEM_ADMIN のみ"""
+    item = session.execute(
+        select(Item).where(Item.id == item_id)
+    ).scalar_one_or_none()
+    if item is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+    check_resource_ownership(owner_id=item.user_id, current_user=current_user)
+    session.delete(item)
     session.commit()

@@ -4,11 +4,20 @@ from pydantic_settings import BaseSettings
 class Environment(BaseSettings):
     """環境変数から読み込まれる設定オブジェクト"""
 
+    # DB 接続情報
     db_user: str
     db_password: str
     db_host: str
     db_port: str
     db_name: str
+
+    # JWT 設定
+    token_secret_key: str = "change-me-in-production"
+    token_algorithm: str = "HS256"
+    token_expire_minutes: int = 480  # 8 時間
+
+    # Cookie 設定
+    cookie_secure: bool = False  # 本番は True (HTTPS 必須)
 
     @property
     def database_url(self) -> str:
