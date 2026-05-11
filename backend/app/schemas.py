@@ -35,9 +35,38 @@ class UserUpdate(BaseModel):
     role_ids: list[int] | None = None
 
 
+class UserLogin(BaseModel):
+    """POST /api/v1/login のリクエストボディ"""
+    username: str
+    password: str
+
+
 class UserRead(UserBase):
     """GET レスポンスとして返す User"""
     id: int
     roles: list[RoleRead]
+
+    model_config = ConfigDict(from_attributes=True)
+
+# ===== Item =====
+
+class ItemCreate(BaseModel):
+    """POST /api/v1/items/ のリクエストボディ"""
+    title: str
+    content: str
+
+
+class ItemUpdate(BaseModel):
+    """PATCH /api/v1/items/{item_id} のリクエストボディ"""
+    title: str | None = None
+    content: str | None = None
+
+
+class ItemRead(BaseModel):
+    """GET レスポンスとして返す Item"""
+    id: int
+    user_id: int
+    title: str
+    content: str
 
     model_config = ConfigDict(from_attributes=True)
