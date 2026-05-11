@@ -184,7 +184,7 @@ web-tutorial-v2/
   - **httpOnly Cookie でトークンを保持**（XSS耐性、CSRF対策含めて解説）
   - ロールベースの認可
 
-- [ ] **Chapter 7: 構造化ログとエラーハンドリング**
+- [x] **Chapter 7: 構造化ログとエラーハンドリング**
   - 例外ハンドラ、エラーレスポンス設計
   - structlog による JSON ログ
   - リクエストID の付与
