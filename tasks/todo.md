@@ -178,7 +178,7 @@ web-tutorial-v2/
   - User/Item の CRUD
   - ルーター分割、依存性注入（`Depends`）、レイヤ分離
 
-- [ ] **Chapter 6: 認証・認可（自前ID/PW）**
+- [x] **Chapter 6: 認証・認可（自前ID/PW）**
   - パスワードハッシュ（argon2）
   - JWT 発行・検証
   - **httpOnly Cookie でトークンを保持**（XSS耐性、CSRF対策含めて解説）
