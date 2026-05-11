@@ -174,7 +174,7 @@ web-tutorial-v2/
   - モデル変更 → リビジョン生成 → apply の流れ
   - なぜ手動 ALTER ではダメか
 
-- [ ] **Chapter 5: CRUD API の実装**
+- [x] **Chapter 5: CRUD API の実装**
   - User/Item の CRUD
   - ルーター分割、依存性注入（`Depends`）、レイヤ分離
 
