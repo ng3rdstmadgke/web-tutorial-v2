@@ -189,13 +189,13 @@ web-tutorial-v2/
   - structlog による JSON ログ
   - リクエストID の付与
 
-- [ ] **Chapter 8: APIテスト (pytest)**
+- [x] **Chapter 8: APIテスト (pytest)**
   - fixture でテスト用DB/ユーザーをセットアップ
   - 認証が必要なエンドポイントのテスト
 
 ### 第2部: フロントエンド
 
-- [ ] **Chapter 9: JS/TS おさらい (外部リンク集)**
+- [x] **Chapter 9: JS/TS おさらい (外部リンク集)**
   - サバイバルTypeScript、公式Tutorial などへのリンク
   - 本編に最低限必要な概念だけ簡潔にまとめる
 
