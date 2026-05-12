@@ -43,7 +43,7 @@ RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2
 
 # kubectl インストール
 # https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/
-RUN curl -LO https://dl.k8s.io/release/v1.30.0/bin/linux/amd64/kubectl && \
+RUN curl -LO https://dl.k8s.io/release/v1.36.0/bin/linux/amd64/kubectl && \
     chmod +x ./kubectl && \
     mv ./kubectl /usr/local/bin/kubectl
 
@@ -59,10 +59,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt update && apt install -y postgresql-client-18
 
 # uv をグローバルにインストール
-RUN curl -LsSf https://astral.sh/uv/install.sh \
-  | env UV_INSTALL_DIR=/usr/local/bin UV_NO_MODIFY_PATH=1 sh
-
-ENV UV_PROJECT_ENVIRONMENT="/workspaces/web-tutorial-v2/.venv"
+# https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Node.js インストール
 # https://nodesource.com/products/distributions
@@ -73,6 +71,12 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && \
 # Google Chrome のインストール
 RUN wget -q  https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
     apt install -y ./google-chrome-stable_current_amd64.deb
+
+# Argo CD CLI インストール
+# https://argo-cd.readthedocs.io/en/stable/cli_installation/#download-with-curl
+RUN curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64 && \
+    sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd && \
+    rm argocd-linux-amd64
 
 USER vscode
 

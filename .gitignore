@@ -1,18 +1,37 @@
 tmp/
+react-playground/
 core
 
-# AI
+# --- --- --- AI --- --- ---
 .gemini/
 .claude/*.local.*
-.kiri/
 .serena/
 .playwright-mcp/
 .devcontainer/.env
+agent-tasks/
 
 
-# --- --- --- backend --- --- ---
+# --- --- --- env --- --- ---
+.env*
+!.env.sample
+
+# --- --- --- python --- --- ---
 # Byte-compiled / optimized / DLL files
 .venv/
 __pycache__/
 *.py[codz]
 *$py.class
+.Trash-*/
+.ipynb_checkpoints/
+
+# --- --- --- node.js --- --- ---
+.pnpm-store/
+node_modules/
+.next/
+.turbo/
+*.tsbuildinfo
+
+# --- --- --- e2e --- --- ---
+playwright/.auth/
+test-results/
+playwright-report/
