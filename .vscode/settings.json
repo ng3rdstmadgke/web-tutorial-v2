@@ -1,0 +1,50 @@
+{
+  //  Python 拡張の機能。ターミナルを新しく開いたとき、選択中の Python インタプリタの仮想環境（.venv など）を自動で activateする
+  "python.terminal.activateEnvironment": false,
+  //  VS Code のエクスプローラー（左サイドのファイルツリー）から、指定パターンを非表示にする設定
+  "files.exclude": {
+    // python
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/.venv": true,
+    "**/.mypy_cache": true,
+    "**/.ruff_cache": true,
+
+    // node.js
+    "**/node_modules": true,
+    "**/.pnpm-store": true,
+    "**/.next": true,
+
+    // e2e
+    "e2e/test-results": true,
+
+    // terraform
+    "**/.terraform": true,
+
+    // AI関連
+    "**/.playwright-mcp": true,
+    "**/.ipynb_checkpoints": true,
+    "**/.serena": true,
+  },
+  // ファイル監視の対象から除外
+  "files.watcherExclude": {
+    // python
+    "**/.pytest_cache/**": true,
+    "**/.venv/**": true,
+    "**/.mypy_cache/**": true,
+
+    // node.js
+    "**/node_modules/**": true,
+    "**/.pnpm-store/**": true,
+    "**/.next/**": true,
+
+    // e2e
+    "e2e/test-results/**": true,
+  },
+  // 検索対象から除外 (.gitignoreに含まれるファイル・ディレクトリは自動で除外)
+  "search.exclude": {
+    "**/package-lock.json": true,
+    "**/pnpm-lock.yaml": true,
+    "**/uv.lock": true
+  }
+}
