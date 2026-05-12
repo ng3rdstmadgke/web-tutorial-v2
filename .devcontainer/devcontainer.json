@@ -25,6 +25,8 @@
   },
 
   "forwardPorts": [
+    "web-tutorial-v2-backend-${localEnv:USER}:8000",
+    "web-tutorial-v2-frontend-${localEnv:USER}:3000"
   ],
 
   "mounts": [
@@ -89,12 +91,14 @@
         "bierner.markdown-mermaid",
         "jebbs.plantuml",
 
-        // Python
+        // Backend
         "ms-python.vscode-pylance",
-        "ms-python.black-formatter",
         "matangover.mypy",
         "charliermarsh.ruff",
         "ms-toolsai.jupyter",
+
+        // Frontend
+        "bradlc.vscode-tailwindcss",
 
         // Others
         "ms-vscode.makefile-tools",
