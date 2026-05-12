@@ -8,6 +8,7 @@ core
 .serena/
 .playwright-mcp/
 .devcontainer/.env
+agent-tasks/
 
 
 # --- --- --- backend --- --- ---
