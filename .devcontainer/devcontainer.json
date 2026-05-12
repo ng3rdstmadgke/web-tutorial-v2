@@ -25,6 +25,9 @@
   },
 
   "forwardPorts": [
+    "backend:8000",
+    "frontend:3000",
+    "proxy:8080"
   ],
 
   "mounts": [
@@ -41,7 +44,7 @@
   "features": {
     // docker outside of dockerを利用するための設定: https://github.com/devcontainers/features/tree/main/src/docker-outside-of-docker
     "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
-    // k9s: https://github.com/rio/features
+    // k9sインストール: https://github.com/derailed/k9s
     "ghcr.io/rio/features/k9s:1": {},
     // GitHub CLI: https://github.com/cli/cli
     "ghcr.io/devcontainers/features/github-cli:1": {}
@@ -85,16 +88,26 @@
         // Docs
         "hediet.vscode-drawio",
         "yzhang.markdown-all-in-one",
-        "bierner.github-markdown-preview",
-        "bierner.markdown-mermaid",
         "jebbs.plantuml",
 
-        // Python
+        // DB
+        "cweijan.vscode-database-client2",
+
+        // Backend
         "ms-python.vscode-pylance",
-        "ms-python.black-formatter",
         "matangover.mypy",
         "charliermarsh.ruff",
         "ms-toolsai.jupyter",
+        "tamasfe.even-better-toml",
+
+        // Frontend
+        "bradlc.vscode-tailwindcss",
+
+        // k8s
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+
+        // Terraform
+        "hashicorp.terraform",
 
         // Others
         "ms-vscode.makefile-tools",
