@@ -21,3 +21,12 @@ __pycache__/
 *$py.class
 .Trash-*/
 .ipynb_checkpoints/
+
+# --- --- --- frontend --- --- ---
+.pnpm-store/
+node_modules/
+.next/
+.turbo/
+*.tsbuildinfo
+frontend/.env*
+!frontend/.env.example
