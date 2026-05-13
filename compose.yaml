@@ -52,6 +52,30 @@ services:
       retries: 5
     networks:
       - devcontainer-nw
+  frontend:
+    container_name: web-tutorial-v2-frontend-${HOST_USER}
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+    volumes:
+      # ホットリロード用にホスト側のディレクトリをマウント
+      - ${HOST_DIR}/frontend:/opt/frontend
+      # node_modules と .next はコンテナ内のものを優先
+      - /opt/frontend/node_modules
+      - /opt/frontend/.next
+    networks:
+      - devcontainer-nw
+  proxy:
+    container_name: web-tutorial-v2-proxy-${HOST_USER}
+    image: nginx:1.27-alpine
+    volumes:
+      # リバースプロキシ設定 (/ -> frontend, /api/ -> backend)
+      - ${HOST_DIR}/docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - devcontainer-nw
 networks:
   devcontainer-nw:
     external: true
