@@ -50,7 +50,7 @@ web-tutorial-v2/
 │
 ├── frontend/                  # Next.js（Chapter 10 で初登場）
 │
-├── e2e/                       # Playwright（Chapter 14 で初登場）
+├── e2e/                       # Playwright（Chapter 12 で初登場）
 │
 ├── docker/                    # Dockerfile 群
 │   ├── backend.Dockerfile
@@ -60,10 +60,10 @@ web-tutorial-v2/
 ├── compose.yaml               # ルート直下、章ごとに育つ
 ├── .env.example
 │
-├── k8s/                       # Chapter 16 で初登場（Kustomize: base + overlays）
+├── k8s/                       # Chapter 12 で初登場（Kustomize: base + overlays）
 │
 ├── .github/
-│   └── workflows/             # Chapter 15 で初登場
+│   └── workflows/             # Chapter 12 で初登場
 │
 ├── docs/                      # 章ごとREADME
 │   ├── README.md              # 全17章の目次
@@ -84,7 +84,7 @@ web-tutorial-v2/
 | Chapter 1 | `backend` サービス（最小の FastAPI コンテナ、DB なし） |
 | Chapter 3 | `db` サービス（PostgreSQL）追加、`backend` から接続 |
 | Chapter 10 | `frontend` サービス（Next.js）追加 |
-| Chapter 17 | `keycloak` サービス追加 |
+| Chapter 12 | `keycloak` サービス追加 |
 
 ### docs/ のREADMEテンプレ
 
@@ -199,7 +199,7 @@ web-tutorial-v2/
   - サバイバルTypeScript、公式Tutorial などへのリンク
   - 本編に最低限必要な概念だけ簡潔にまとめる
 
-- [ ] **Chapter 10: Next.js 入門 + Tailwind CSS 基礎**
+- [x] **Chapter 10: Next.js 入門 + Tailwind CSS 基礎**
   - **`compose.yaml` に `frontend` サービスを追加**
   - App Router の基本（Server Component / Client Component）
   - ルーティング、レイアウト
@@ -207,34 +207,41 @@ web-tutorial-v2/
   - shadcn/ui のセットアップと使い方
   - Tailwind を素で書く場面と shadcn/ui を使う場面の使い分け
 
-- [ ] **Chapter 11: OpenAPI駆動の型生成**
-  - `openapi-typescript` で FastAPI の OpenAPI から TS 型生成
-  - 型付き fetch クライアントの使い方
-  - CI で型の追従チェック
-
-- [ ] **Chapter 12: ログインページの実装**
+- [ ] **Chapter 11: ログインページの実装 + OpenAPI 型生成**
+  - **`openapi-typescript`** で FastAPI の OpenAPI から TS 型生成（`pnpm gen:api` スクリプト化、`frontend/src/lib/api/schema.ts` に出力）
+  - **`openapi-fetch`** で型安全な fetch クライアントを `frontend/src/lib/api/client.ts` に実装
+  - **環境変数** で Server Component / Client Component のホスト名を出し分け（`INTERNAL_API_URL` = コンテナ名、`NEXT_PUBLIC_API_URL` = `http://localhost:8000`）
   - Chapter 6 のID/PW認証と接続（httpOnly Cookie）
   - **React Hook Form + Zod** を導入してフォーム/バリデーションを実装
   - shadcn/ui の `<Form>` コンポーネント活用
   - 認証ガード（middleware で Cookie を見て未ログインならリダイレクト）
+  - 型の追従チェック（`pnpm gen:api` 後に diff が出ないこと）は CI で本格化（Chapter 12）
 
-- [ ] **Chapter 13: CRUD画面の実装**
+- [ ] **Chapter 12: CRUD画面の実装**
   - アイテム管理・ユーザー管理画面
   - Server Component で初期データ取得 / Client Component で更新系
   - **TanStack Query を Client Component の API 呼び出しで導入**（一覧の自動再検証、楽観的更新）
   - サーバー側 fetch とクライアント側 fetch の使い分け方針
 
-- [ ] **Chapter 14: E2Eテスト (Playwright)**
+- [ ] **Chapter 13: E2Eテスト (Playwright)**
   - ログイン〜CRUD操作のシナリオ
   - CI での実行
 
 ### 第3部: 運用・公開
 
-- [ ] **Chapter 15: GitHub Actions で CI**
+- [ ] **Chapter 14: GitHub Actions で CI**
   - バックエンド（lint/test）、フロント（lint/type-check/test）、E2E を統合
+  - **バックエンドは mypy による型チェックも実施**（`uv run mypy app/` を CI ジョブに組み込む）
+  - **セキュリティチェックも CI に組み込む**:
+    - **依存脆弱性スキャン**: Python は `pip-audit`（`uv run pip-audit` か `uv tool run pip-audit`）、Node は `pnpm audit --prod`
+    - **コードレベルのセキュリティリント**: Python は `bandit`、または `ruff` の `S` 系ルール（B201, S301 等）を有効化
+    - **Docker イメージスキャン**: `Trivy` で `backend.Dockerfile` / `frontend.Dockerfile` のビルド成果物の CVE をチェック
+    - **Secret scanning**: GitHub の Push Protection を有効化（リポジトリ設定）、加えて `gitleaks` を CI ジョブで走らせる選択肢
+    - **Dependabot / Renovate**: 依存パッケージ・GitHub Actions・Docker base image の自動アップデート PR（`.github/dependabot.yml`）
+    - **CodeQL**: GitHub 公式の SAST（Python / JavaScript の両方を analyze）
   - PR チェックのフロー
 
-- [ ] **Chapter 16: k8s (EKS) へのデプロイ**
+- [ ] **Chapter 15: k8s (EKS) へのデプロイ**
   - Kustomize 構造（base + overlays）でマニフェスト記述
   - Ingress / Service / Deployment の役割
   - シークレット管理
@@ -242,14 +249,14 @@ web-tutorial-v2/
 
 ### 第4部: 発展
 
-- [ ] **Chapter 17: Keycloak + 自前OIDC実装**
+- [ ] **Chapter 16: Keycloak + 自前OIDC実装**
   - **`compose.yaml` に `keycloak` サービスを追加**
   - Keycloak で realm/client を作る
   - OIDC Authorization Code Flow + PKCE を自前実装で理解する
   - Chapter 6 の自前認証をリプレイス
   - 「なぜライブラリに頼らず書くのか」＝プロトコル理解のため
 
-- [ ] **Chapter 18: 画像アップロード機能 (構想)**
+- [ ] **Chapter 17: 画像アップロード機能 (構想)**
   - Chapter 4 で `users.avatar_url` カラムを追加するが、本章までは外部 URL を貼る前提で運用
   - 本章で **アプリケーションからの画像アップロード・配信** を本格実装
   - 検討事項:

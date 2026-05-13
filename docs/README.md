@@ -17,7 +17,7 @@
 
 - [Chapter 9: JS/TS おさらい (外部リンク集)](chapter09/README.md)
 - [Chapter 10: Next.js 入門 + Tailwind CSS 基礎](chapter10/README.md)
-- Chapter 11: OpenAPI 駆動の型生成
+- [Chapter 11: OpenAPI 駆動の型生成 + ログインページの実装](chapter11/README.md)
 - Chapter 12: ログインページの実装
 - Chapter 13: CRUD 画面の実装
 - Chapter 14: E2E テスト (Playwright)
