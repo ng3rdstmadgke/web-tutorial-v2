@@ -29,4 +29,4 @@ node_modules/
 .turbo/
 *.tsbuildinfo
 frontend/.env*
-!frontend/.env.example
+!frontend/.env.sample

@@ -184,6 +184,14 @@ def logout(response: Response):
     return {"detail": "Logged out"}
 
 
+@router.get("/me", response_model=UserRead)
+def read_me(
+    current_user: User = Depends(auth.get_current_user),
+) -> User:
+    """ログイン中のユーザー自身の情報を返す"""
+    return current_user
+
+
 # === Item CRUD ===
 
 @router.post("/items/", response_model=ItemRead, status_code=status.HTTP_201_CREATED)
