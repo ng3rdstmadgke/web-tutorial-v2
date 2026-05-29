@@ -30,6 +30,8 @@ services:
     build:
       context: .
       dockerfile: docker/frontend.Dockerfile
+    env_file:
+      - frontend/.env
     ports:
       - "3000:3000"
     volumes:
