@@ -18,18 +18,18 @@
 - [Chapter 9: JS/TS おさらい (外部リンク集)](chapter09/README.md)
 - [Chapter 10: Next.js 入門 + Tailwind CSS 基礎](chapter10/README.md)
 - [Chapter 11: OpenAPI 駆動の型生成 + ログインページの実装](chapter11/README.md)
-- Chapter 12: ログインページの実装
-- Chapter 13: CRUD 画面の実装
-- Chapter 14: E2E テスト (Playwright)
+- Chapter 12: CRUD 画面の実装
+- Chapter 13: E2E テスト (Playwright)
 
 ## 第3部: 運用・公開
 
-- Chapter 15: GitHub Actions で CI
-- Chapter 16: k8s (EKS) へのデプロイ
+- Chapter 14: GitHub Actions で CI
+- Chapter 15: k8s (EKS) へのデプロイ
 
 ## 第4部: 発展
 
-- Chapter 17: Keycloak + 自前 OIDC 実装
+- Chapter 16: Keycloak + 自前 OIDC 実装
+- Chapter 17: 画像アップロード機能
 
 ---
 
