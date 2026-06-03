@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.config import env
 from app import auth
 from app.model import Role, RoleType, User, Item
-from app.schemas import UserCreate, UserRead, UserUpdate, UserLogin, ItemCreate, ItemRead, ItemUpdate
+from app.schemas import UserCreate, UserRead, UserUpdate, UserLogin, ItemCreate, ItemRead, ItemUpdate, RoleRead
 from app.session import get_session
 from app.permissions import PermissionType, require_permissions, check_resource_ownership, has_role
 
@@ -85,6 +85,18 @@ def read_users(
         select(User).offset(skip).limit(limit).order_by(User.id)
     ).scalars().all()
     return list(users)
+
+@router.get("/roles/", response_model=list[RoleRead])
+def read_roles(
+    session: Session = Depends(get_session),
+    # ロール情報は管理者向けなので USER_READ 権限を要求する
+    _: User = Depends(require_permissions([PermissionType.USER_READ])),
+) -> list[Role]:
+    """ロール一覧を返す。ユーザー作成・編集の役割選択肢として使う。"""
+    roles = session.execute(
+        select(Role).order_by(Role.id)
+    ).scalars().all()
+    return list(roles)
 
 
 @router.patch("/users/{user_id}", response_model=UserRead)
