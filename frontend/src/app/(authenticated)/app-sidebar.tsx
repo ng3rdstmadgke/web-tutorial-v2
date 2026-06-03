@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 // 必要なアイコンだけを import (lucide-react は tree-shakable なので import しなかったアイコンはバンドルに含まれない)。
 // LucideIcon はアイコンコンポーネントの型
-import { Home, Info, type LucideIcon } from "lucide-react";
+import { Package, Users, type LucideIcon } from "lucide-react";
 
 import {
   Sidebar,
@@ -23,11 +23,8 @@ type MenuItem = {
 };
 
 const items: MenuItem[] = [
-  { title: "Home", url: "/", icon: Home },
-  { title: "About", url: "/about", icon: Info },
-  // Chapter 12 以降で増やす想定
-  // { title: "Items", url: "/items", icon: Package },
-  // { title: "Users", url: "/users", icon: Users },
+  { title: "Items", url: "/items", icon: Package },
+  { title: "Users", url: "/users", icon: Users },
 ];
 
 export function AppSidebar() {
