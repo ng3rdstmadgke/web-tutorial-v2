@@ -23,7 +23,7 @@
 
 ## 第3部: 運用・公開
 
-- Chapter 14: GitHub Actions で CI
+- [Chapter 14: GitHub Actions で CI](chapter14/README.md)
 - Chapter 15: k8s (EKS) へのデプロイ
 
 ## 第4部: 発展
