@@ -1,0 +1,32 @@
+version: 2
+updates:
+  - package-ecosystem: "uv"            # Python (backend/pyproject.toml + uv.lock)
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+    cooldown:                          # 新規リリースを 3 日寝かせてから更新 PR を作る
+      default-days: 3
+  - package-ecosystem: "npm"           # pnpm は "npm" エコシステムで pnpm-lock.yaml を検出
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 3
+  - package-ecosystem: "npm"           # E2E (Playwright)
+    directory: "/e2e"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 3
+  - package-ecosystem: "docker"        # Dockerfile のベースイメージ
+    directory: "/docker"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 3
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 3

@@ -6,7 +6,6 @@ from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.types import ASGIApp
 
-
 logger = structlog.get_logger()
 
 

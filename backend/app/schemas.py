@@ -2,7 +2,6 @@ from pydantic import BaseModel, ConfigDict
 
 from app.model import RoleType
 
-
 # ===== Role =====
 
 class RoleRead(BaseModel):
