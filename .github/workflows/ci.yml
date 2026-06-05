@@ -1,0 +1,207 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# GITHUB_TOKEN の権限は最小限に。イメージ push のため packages: write のみ追加する。
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  backend-quality:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app_pass
+          POSTGRES_DB: app
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U app -d app"
+          --health-interval 3s --health-timeout 3s --health-retries 20
+    env:
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DB_USER: app
+      DB_PASSWORD: app_pass
+      DB_NAME: app
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v8
+        with:
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
+      - name: Install dependencies
+        working-directory: backend
+        run: uv sync --locked
+      - name: Lint (ruff)
+        working-directory: backend
+        run: uv run ruff check
+      - name: Type check (mypy)
+        working-directory: backend
+        run: uv run mypy
+      - name: Test (pytest)
+        working-directory: backend
+        run: uv run pytest
+      - name: Audit dependencies (uv audit)
+        working-directory: backend
+        run: uv audit
+
+  frontend-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      # pnpm を先に入れてから setup-node の cache: pnpm を有効化する
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Install dependencies
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+      - name: Lint (eslint)
+        working-directory: frontend
+        run: pnpm lint
+      - name: Type check (tsc)
+        working-directory: frontend
+        run: pnpm type-check
+      - name: Audit dependencies (pnpm audit)
+        working-directory: frontend
+        run: pnpm audit --prod --audit-level high
+
+  openapi-drift:
+    runs-on: ubuntu-latest
+    env:
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DB_USER: app
+      DB_PASSWORD: app_pass
+      DB_NAME: app
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v8
+        with:
+          enable-cache: true
+          cache-dependency-glob: "backend/uv.lock"
+      - name: Dump OpenAPI schema
+        working-directory: backend
+        run: |
+          uv sync --locked
+          uv run python -c "import json; from app.main import app; print(json.dumps(app.openapi()))" > /tmp/openapi.json
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - name: Regenerate types and check diff
+        working-directory: frontend
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm exec openapi-typescript /tmp/openapi.json -o src/lib/api/schema.ts
+          git diff --exit-code src/lib/api/schema.ts
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build & start CI stack
+        run: docker compose -f compose.ci.yaml up -d --build
+      - name: Wait for the app to be ready
+        run: |
+          for _ in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/v1/me || true)
+            if [ "$code" = "401" ]; then echo "ready"; exit 0; fi
+            sleep 2
+          done
+          echo "app did not become ready"; docker compose -f compose.ci.yaml logs; exit 1
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: e2e/pnpm-lock.yaml
+      - name: Install e2e deps and browser
+        working-directory: e2e
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm exec playwright install --with-deps chromium
+      - name: Run E2E
+        working-directory: e2e
+        env:
+          E2E_BASE_URL: http://localhost:8080
+        run: pnpm exec playwright test
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: e2e/playwright-report/
+          retention-days: 7
+      - name: Stop CI stack
+        if: always()
+        run: docker compose -f compose.ci.yaml down -v
+
+  image:
+    runs-on: ubuntu-latest
+    needs: [backend-quality, frontend-quality, openapi-drift, e2e]
+    strategy:
+      matrix:
+        include:
+          - name: backend
+            dockerfile: docker/backend.Dockerfile
+          - name: frontend
+            dockerfile: docker/frontend.Dockerfile
+    steps:
+      - uses: actions/checkout@v6
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository }}-${{ matrix.name }}
+          tags: |
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
+      # まずローカルに load してスキャンする（この時点では push しない）
+      - name: Build image (load for scan)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          target: prod
+          load: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Scan image (Trivy)
+        uses: aquasecurity/trivy-action@0.36.0
+        with:
+          image-ref: ghcr.io/${{ github.repository }}-${{ matrix.name }}:${{ steps.meta.outputs.version }}
+          severity: "CRITICAL,HIGH"
+          ignore-unfixed: true   # 修正版が出ている脆弱性のみで失敗させる
+          exit-code: "1"
+      # main への push のときだけ GHCR に push する（キャッシュ済みなので高速）
+      - name: Push to GHCR (main only)
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          target: prod
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

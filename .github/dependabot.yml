@@ -1,0 +1,22 @@
+version: 2
+updates:
+  - package-ecosystem: "uv"            # Python (backend/pyproject.toml + uv.lock)
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "npm"           # pnpm は "npm" エコシステムで pnpm-lock.yaml を検出
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "npm"           # E2E (Playwright)
+    directory: "/e2e"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "docker"        # Dockerfile のベースイメージ
+    directory: "/docker"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

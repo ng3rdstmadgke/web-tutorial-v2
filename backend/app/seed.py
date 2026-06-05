@@ -8,11 +8,15 @@
 """
 from sqlalchemy import select
 
+from app import auth
 from app.model import Role, RoleType, User
 from app.session import SessionLocal
-from app import auth
+from typing import TypedDict
 
-
+class SeedUser(TypedDict):
+    username: str
+    password: str
+    role: RoleType
 
 def seed_roles() -> None:
     """roles テーブルに固定 3 件を投入する。すでに存在すれば何もしない。"""
@@ -30,7 +34,7 @@ def seed_roles() -> None:
 
 def seed_users() -> None:
     """動作確認用ユーザーを投入する。すでに存在すればスキップ。"""
-    test_users = [
+    test_users: list[SeedUser] = [
         {"username": "sys_admin", "password": "admin", "role": RoleType.SYSTEM_ADMIN},
         {"username": "loc_admin", "password": "admin", "role": RoleType.LOCATION_ADMIN},
         {"username": "loc_operator", "password": "operator", "role": RoleType.LOCATION_OPERATOR},

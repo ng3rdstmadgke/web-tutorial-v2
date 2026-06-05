@@ -4,8 +4,9 @@ services:
     build:
       context: .
       dockerfile: docker/backend.Dockerfile
-    env_file:                        # ← 追加
-      - backend/.env                 # ← 追加
+      target: dev
+    env_file:
+      - backend/.env
     ports:
       - "8000:8000"
     volumes:
@@ -30,6 +31,7 @@ services:
     build:
       context: .
       dockerfile: docker/frontend.Dockerfile
+      target: dev
     env_file:
       - frontend/.env
     ports:
