@@ -10,7 +10,6 @@ from app.config import env
 from app.model import User
 from app.session import get_session
 
-
 # --- パスワードハッシュ ---
 
 _password_hash = PasswordHash.recommended()
@@ -46,12 +45,12 @@ def decode_access_token(token: str) -> dict:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token has expired",
-        )
+        ) from None
     except jwt.InvalidTokenError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",
-        )
+        ) from None
 
 
 # --- 認証ガード ---

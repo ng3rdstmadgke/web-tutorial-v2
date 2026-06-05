@@ -2,7 +2,6 @@ import structlog
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-
 logger = structlog.get_logger()
 
 
