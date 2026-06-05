@@ -1,5 +1,5 @@
 # ===== base: dev / build 共通。依存をインストールする =====
-FROM node:22-bookworm-slim AS base
+FROM node:26-bookworm-slim AS base
 ENV CI=true
 # corepack を有効化（pnpm のバージョンは package.json の "packageManager" に従う）
 RUN corepack enable
@@ -22,7 +22,7 @@ ENV INTERNAL_API_URL=http://localhost:8000
 RUN pnpm build
 
 # ===== prod: standalone を node で起動する最小ランタイム =====
-FROM node:22-bookworm-slim AS prod
+FROM node:26-bookworm-slim AS prod
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
