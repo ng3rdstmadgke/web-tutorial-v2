@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: docker/backend.Dockerfile
+      target: dev
     env_file:
       - backend/.env
     volumes:
@@ -57,6 +58,7 @@ services:
     build:
       context: .
       dockerfile: docker/frontend.Dockerfile
+      target: dev
     env_file:
       - frontend/.env
     volumes:

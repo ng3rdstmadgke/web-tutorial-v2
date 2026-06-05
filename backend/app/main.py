@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
-from app.logging_config import setup_logging
 from app.exception_handlers import register_exception_handlers
+from app.logging_config import setup_logging
 from app.middleware import RequestLoggingMiddleware
 from app.routers import router
 

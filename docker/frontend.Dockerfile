@@ -1,21 +1,35 @@
-FROM node:22-bookworm-slim
-
-# CI 環境とみなしてもらい、TTY が必要な対話プロンプトをスキップする
+# ===== base: dev / build 共通。依存をインストールする =====
+FROM node:22-bookworm-slim AS base
 ENV CI=true
-
-# corepack を有効化して pnpm を使えるようにする (マイナーまで固定、patch は最新を許容)
-RUN corepack enable && corepack prepare pnpm@11.1 --activate
-
+# corepack を有効化（pnpm のバージョンは package.json の "packageManager" に従う）
+RUN corepack enable
 WORKDIR /opt/frontend
-
-# 依存定義をコピーしてインストール (pnpm-workspace.yaml には allowBuilds の設定が入っている)
 COPY frontend/package.json frontend/pnpm-lock.yaml frontend/pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
-# アプリのソースをコピー
+# ===== dev: 開発サーバー（compose.yaml が target: dev で使用）=====
+FROM base AS dev
 COPY frontend ./
-
 EXPOSE 3000
-
-# 開発サーバーを起動（コンテナ外からアクセスできるよう 0.0.0.0 で待ち受け）
 CMD ["pnpm", "dev", "--hostname", "0.0.0.0"]
+
+# ===== build: 本番ビルド。.next/standalone を出力する =====
+FROM base AS build
+COPY frontend ./
+# next build はサーバー側モジュール評価で env.INTERNAL_API_URL を参照・検証する。
+# 実値は実行時に注入するため、ビルドを通すためのダミー値を渡す（実行時の環境変数で上書きされる）。
+ENV INTERNAL_API_URL=http://localhost:8000
+RUN pnpm build
+
+# ===== prod: standalone を node で起動する最小ランタイム =====
+FROM node:22-bookworm-slim AS prod
+ENV NODE_ENV=production
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
+WORKDIR /opt/frontend
+# standalone 本体 + 静的アセット + public を配置（server.js がこれらを配信する）
+COPY --from=build /opt/frontend/.next/standalone ./
+COPY --from=build /opt/frontend/.next/static ./.next/static
+COPY --from=build /opt/frontend/public ./public
+EXPOSE 3000
+CMD ["node", "server.js"]
