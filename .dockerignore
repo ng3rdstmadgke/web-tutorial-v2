@@ -1,0 +1,26 @@
+# 環境変数ファイル（実行時に注入するためイメージには含めない）
+**/.env
+**/.env.*
+
+# 依存・ビルド生成物（イメージ内で生成し直す。ホストのものは持ち込まない）
+**/node_modules
+**/.next
+**/.venv
+**/__pycache__
+**/*.pyc
+
+# 各種キャッシュ
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
+
+# バージョン管理・ツール
+.git
+.gitignore
+.devcontainer
+
+# イメージのビルドに不要なもの
+docs
+agent-tasks
+e2e
+tmp
