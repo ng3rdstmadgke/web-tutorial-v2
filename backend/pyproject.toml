@@ -8,7 +8,7 @@ dependencies = [
     "psycopg[binary]~=3.3.4",
     "pwdlib[argon2]~=0.3.0",
     "pydantic-settings~=2.14.0",
-    "pyjwt~=2.12.1",
+    "pyjwt~=2.13.0",
     "python-dotenv~=1.2.2",
     "sqlalchemy~=2.0.49",
     "structlog~=25.5.0",
@@ -19,5 +19,48 @@ dev = [
     "httpx~=0.28.1",
     "ipykernel>=7.2.0",
     "jupyterlab>=4.5.7",
+    "mypy>=2.1.0",
     "pytest~=9.0.3",
+    "ruff>=0.15.15",
 ]
+
+[tool.uv]
+exclude-newer = "3 days"  # 公開後3日未満の版を採用しない
+
+# --- ruff: リンタ ---
+[tool.ruff]
+# 学習用の Jupyter notebook と、自動生成される alembic マイグレーションは対象外にする
+extend-exclude = ["chapter03", "alembic"]
+
+[tool.ruff.lint]
+# E/F: pycodestyle・Pyflakes（基本）, I: import 整列, B: bugbear（バグになりやすい書き方）, S: flake8-bandit（セキュリティ）
+select = ["E", "F", "I", "B", "S"]
+# E501（行長）はフォーマッタに任せ、日本語コメントの折返しは強制しない
+ignore = ["E501"]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI の依存注入は引数デフォルトに関数呼び出しを置くのが正式な書き方なので B008 の対象外にする。
+# require_permissions は Depends(require_permissions([...])) で使うパラメータ付き依存ファクトリ。
+extend-immutable-calls = [
+    "fastapi.Depends",
+    "fastapi.Query",
+    "fastapi.Path",
+    "fastapi.Body",
+    "fastapi.Header",
+    "fastapi.Cookie",
+    "fastapi.Form",
+    "fastapi.File",
+    "app.permissions.require_permissions",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# テストでは assert（S101）を多用する。比較に使う "bearer" 等の文字列リテラル（S105/S106）も秘密情報ではない
+"tests/**" = ["S101", "S105", "S106"]
+
+# --- mypy: 静的型チェック ---
+[tool.mypy]
+python_version = "3.12"
+plugins = ["pydantic.mypy"]      # pydantic v2 のモデルを型解析できるようにする
+explicit_package_bases = true    # app/ を起点パッケージとして解決する
+ignore_missing_imports = true    # 型スタブの無い外部ライブラリを無視する
+files = ["app"]

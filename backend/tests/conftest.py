@@ -1,14 +1,13 @@
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
-from fastapi.testclient import TestClient
 
+from app import auth
 from app.config import env
 from app.main import app
 from app.model import Base, Role, RoleType, User
 from app.session import get_session
-from app import auth
-
 
 # テスト用 DB の URL
 TEST_DB_NAME = "app_test"
