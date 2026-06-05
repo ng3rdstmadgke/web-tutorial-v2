@@ -1,0 +1,75 @@
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app_pass
+      POSTGRES_DB: app
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d app"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    networks: [ci-nw]
+
+  # 一度きり: スキーマ適用(alembic) と seed 投入を行い、完了したら終了する
+  migrate:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+      target: prod
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: app
+      DB_PASSWORD: app_pass
+      DB_NAME: app
+    command: ["sh", "-c", "uv run alembic upgrade head && uv run python -m app.seed"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    networks: [ci-nw]
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+      target: prod
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: app
+      DB_PASSWORD: app_pass
+      DB_NAME: app
+      TOKEN_SECRET_KEY: ci-test-secret-key
+      TOKEN_ALGORITHM: HS256
+      TOKEN_EXPIRE_MINUTES: "480"
+      LOG_FORMAT: json
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks: [ci-nw]
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+      target: prod
+    environment:
+      INTERNAL_API_URL: http://backend:8000
+    depends_on: [backend]
+    networks: [ci-nw]
+
+  proxy:
+    build:
+      context: .
+      dockerfile: docker/proxy.Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on: [frontend, backend]
+    networks: [ci-nw]
+
+networks:
+  ci-nw:
+    driver: bridge

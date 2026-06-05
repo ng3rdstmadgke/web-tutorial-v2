@@ -12,8 +12,8 @@ class Environment(BaseSettings):
     db_name: str
 
     # JWT 設定
-    token_secret_key: str = "change-me-in-production"
-    token_algorithm: str = "HS256"
+    token_secret_key: str = "change-me-in-production"    # noqa: S105  開発用デフォルト。本番は環境変数で必ず上書きする
+    token_algorithm: str = "HS256"  # noqa: S105  アルゴリズム名であり秘密情報ではない（誤検知の抑制）:w
     token_expire_minutes: int = 480  # 8 時間
 
     # Cookie 設定

@@ -1,6 +1,11 @@
 {
   //  Python 拡張の機能。ターミナルを新しく開いたとき、選択中の Python インタプリタの仮想環境（.venv など）を自動で activateする
   "python.terminal.activateEnvironment": false,
+
+  // マークダウンファイルのプレビューのスクロールの同期を無効化
+  "markdown.preview.scrollEditorWithPreview": false,
+  "markdown.preview.scrollPreviewWithEditor": true,
+
   //  VS Code のエクスプローラー（左サイドのファイルツリー）から、指定パターンを非表示にする設定
   "files.exclude": {
     // python
