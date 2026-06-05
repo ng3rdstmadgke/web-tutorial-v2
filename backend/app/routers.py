@@ -1,17 +1,30 @@
 import structlog
-
-logger = structlog.get_logger()
-
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.config import env
 from app import auth
-from app.model import Role, RoleType, User, Item
-from app.schemas import UserCreate, UserRead, UserUpdate, UserLogin, ItemCreate, ItemRead, ItemUpdate, RoleRead
+from app.config import env
+from app.model import Item, Role, RoleType, User
+from app.permissions import (
+    PermissionType,
+    check_resource_ownership,
+    has_role,
+    require_permissions,
+)
+from app.schemas import (
+    ItemCreate,
+    ItemRead,
+    ItemUpdate,
+    RoleRead,
+    UserCreate,
+    UserLogin,
+    UserRead,
+    UserUpdate,
+)
 from app.session import get_session
-from app.permissions import PermissionType, require_permissions, check_resource_ownership, has_role
+
+logger = structlog.get_logger()
 
 router = APIRouter()
 

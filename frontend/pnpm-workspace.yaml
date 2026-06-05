@@ -2,3 +2,8 @@ allowBuilds:
   msw: true
   sharp: true
   unrs-resolver: true
+minimumReleaseAge: 4320  # 公開後 3 日(4320 分)未満の版を install で採用しない
+minimumReleaseAgeExclude:
+  - postcss@8.5.10
+overrides:
+  postcss@<8.5.10: ^8.5.10
