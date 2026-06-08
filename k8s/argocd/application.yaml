@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: web-tutorial
+  namespace: argocd   # Application は Argo CD のインストール namespace に作る
+spec:
+  project: web-tutorial
+  source:
+    repoURL: https://github.com/YOUR_GITHUB_USERNAME/web-tutorial-v2.git  # <- 変更: 自分の private リポジトリの URL
+    targetRevision: deploy/prod              # 監視するブランチ
+    path: k8s/overlays/prod                  # kustomization.yaml があるパス
+  destination: # デプロイ先のクラスタとnamespace
+    server: https://kubernetes.default.svc
+    namespace: web-tutorial
+  syncPolicy:
+    # automated: を指定しないため sync は手動。
+    syncOptions:
+      - CreateNamespace=true

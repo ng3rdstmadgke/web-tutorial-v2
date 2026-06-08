@@ -164,6 +164,8 @@ jobs:
   image:
     runs-on: ubuntu-latest
     needs: [backend-quality, frontend-quality, openapi-drift, e2e]
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
     strategy:
       matrix:
         include:
@@ -220,3 +222,26 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [image]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    permissions:
+      contents: write          # deploy/prod へ push するため(job 単位で最小権限)
+    steps:
+      - uses: actions/checkout@v6
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Set image tags in overlay
+        working-directory: k8s/overlays/prod
+        # ubuntu-latest には kustomize がプリインストール済み
+        run: |
+          kustomize edit set image \
+            web-tutorial-v2-backend=ghcr.io/${{ github.repository }}-backend:${{ needs.image.outputs.image_tag }} \
+            web-tutorial-v2-frontend=ghcr.io/${{ github.repository }}-frontend:${{ needs.image.outputs.image_tag }}
+      - name: Commit and force-push to deploy/prod
+        run: |
+          git commit -am "deploy: ${{ needs.image.outputs.image_tag }}"
+          git push --force origin HEAD:deploy/prod
