@@ -1,0 +1,6 @@
+ - op: add
+   path: /metadata/annotations/alb.ingress.kubernetes.io~1certificate-arn
+   value: arn:aws:acm:ap-northeast-1:xxxxxxxxxxxx:certificate/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+ - op: add
+   path: /spec/rules/0/host
+   value: web-tutorial.example.com

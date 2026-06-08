@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+spec:
+  clusterIP: None   # headless Service: StatefulSet の各 Pod に安定した DNS を与える
+  selector:
+    app: db
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db
+spec:
+  serviceName: db   # 上の headless Service 名と一致させる
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:18-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            # postgres 公式イメージは POSTGRES_* を要求する。
+            # アプリ側の DB_USER / DB_NAME / DB_PASSWORD と同じ値を別名で渡す。
+            - name: POSTGRES_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: DB_USER
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: DB_NAME
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secret
+                  key: DB_PASSWORD
+          volumeMounts:
+            # postgres:18 の VOLUME は /var/lib/postgresql。
+            # PVC ルート直下の lost+found による初期化失敗を避けるため subPath を使う。
+            - name: data
+              mountPath: /var/lib/postgresql
+              subPath: pgdata
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "app", "-d", "app"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        # storageClassName を省略しているため、クラスタのデフォルト StorageClass が使われます
+        # 必要であれば、EBS (gp3) などの外部ストレージを提供する StorageClass を明示的に指定する。
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
