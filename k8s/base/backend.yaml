@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secret   # private GHCR から image を pull するための認証
+      containers:
+        - name: backend
+          image: web-tutorial-v2-backend
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:  # 指定した config map を環境変数に設定
+                name: app-config
+            - secretRef:  # 指定した secret を環境変数に設定
+                name: app-secret
+          livenessProbe:  # プロセスが生きているか。失敗が続く場合はPodを再起動。
+            httpGet:
+              path: /    # "/"(DB 非依存)
+              port: 8000
+            initialDelaySeconds: 5  # 最初に probeを実行するまでの待ち時間
+            periodSeconds: 10  # 監視間隔
+          readinessProbe:  # リクエストを受けられる状態か。失敗が続く場合は Service から外す。
+            httpGet:
+              path: /health   # "/health"(DB 疎通)
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  annotations:
+    # ALB のターゲットグループ(backend)のヘルスチェック設定。Service 単位で効く。
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/success-codes: "200"
+spec:
+  selector:
+    app: backend
+  ports:
+    - port: 8000
+      targetPort: 8000
