@@ -219,3 +219,12 @@ class TestItemCRUD:
         # 他人のアイテムを取得 → 403
         response = client.get(f"/api/v1/items/{item_id}", headers=other_headers)
         assert response.status_code == 403
+
+class TestHealth:
+    """ヘルスチェック API のテスト。"""
+
+    def test_health_ok(self, client: TestClient):
+        """DB に疎通できれば 200 と status: ok を返す"""
+        response = client.get("/health")
+        assert response.status_code == 200
+        assert response.json() == {"status": "ok"}

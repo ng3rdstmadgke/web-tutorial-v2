@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate
+  annotations:
+    # アプリ本体のsyncの前に実行されます。これが失敗するとアプリはsyncされません
+    argocd.argoproj.io/hook: PreSync
+    # マイグレーションが成功したら Job を削除して、次回、ジョブを再実行できるようにします。
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+    # phase内での優先順位。小さいほど優先。(デフォルトは0、整数で指定)
+    argocd.argoproj.io/sync-wave: '-1'
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: web-tutorial-v2-backend
+          command:
+            - sh
+            - -c
+            - uv run alembic upgrade head && uv run python -m app.seed
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secret

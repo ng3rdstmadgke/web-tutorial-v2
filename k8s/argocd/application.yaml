@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: web-tutorial
+  namespace: argocd   # Application は Argo CD のインストール namespace に作る
+spec:
+  project: default    # 標準の default プロジェクトを使う
+  source:
+    # 自分の fork の URL に置き換える(public なら認証登録は不要)
+    repoURL: https://github.com/your-org/web-tutorial-v2.git
+    targetRevision: deploy/prod          # 監視するブランチ
+    path: k8s/overlays/prod        # kustomization.yaml があるパス
+  destination:
+    server: https://kubernetes.default.svc   # このクラスタ
+    namespace: web-tutorial
+  syncPolicy:
+    automated:
+      prune: true      # git から消えたリソースをクラスタからも削除
+      selfHeal: true   # クラスタ側の手動変更を git の状態へ自動で戻す
+    syncOptions:
+      - CreateNamespace=true
