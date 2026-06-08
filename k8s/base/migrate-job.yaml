@@ -13,6 +13,8 @@ spec:
   backoffLimit: 2
   template:
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret   # private GHCR から image を pull するための認証
       restartPolicy: Never
       containers:
         - name: migrate

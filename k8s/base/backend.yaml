@@ -12,6 +12,8 @@ spec:
       labels:
         app: backend
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret   # private GHCR から image を pull するための認証
       containers:
         - name: backend
           image: web-tutorial-v2-backend

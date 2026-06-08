@@ -4,9 +4,9 @@ metadata:
   name: web-tutorial
   namespace: argocd   # Application は Argo CD のインストール namespace に作る
 spec:
-  project: default    # 標準の default プロジェクトを使う
+  project: web-tutorial   # 専用 AppProject (source/destination を限定)
   source:
-    # 自分の fork の URL に置き換える(public なら認証登録は不要)
+    # 自分の private リポジトリの URL に置き換える(repo credentials を別途登録する)
     repoURL: https://github.com/your-org/web-tutorial-v2.git
     targetRevision: deploy/prod          # 監視するブランチ
     path: k8s/overlays/prod        # kustomization.yaml があるパス
@@ -14,8 +14,7 @@ spec:
     server: https://kubernetes.default.svc   # このクラスタ
     namespace: web-tutorial
   syncPolicy:
-    automated:
-      prune: true      # git から消えたリソースをクラスタからも削除
-      selfHeal: true   # クラスタ側の手動変更を git の状態へ自動で戻す
+    # automated を指定しないため sync は手動。
+    # git の変更は OutOfSync として検知され、`argocd app sync` で承認・反映する。
     syncOptions:
       - CreateNamespace=true
