@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  # DB 接続先。DB_HOST はクラスタ内の Service 名(同一 namespace なのでショート名で解決)
+  DB_HOST: db
+  DB_PORT: "5432"
+  DB_NAME: app
+  DB_USER: app
+  TOKEN_ALGORITHM: HS256
+  TOKEN_EXPIRE_MINUTES: "480"
+  COOKIE_SECURE: "true"   # HTTPS 公開なので Secure Cookie を有効化
+  LOG_FORMAT: json
+  # frontend の SSR が backend を直接呼ぶ先(同一 namespace の Service 名)
+  INTERNAL_API_URL: http://backend:8000

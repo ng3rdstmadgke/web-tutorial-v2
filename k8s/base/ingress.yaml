@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web-tutorial
+  annotations:
+    argocd.argoproj.io/sync-wave: '2'                       # migrate(wave 1) の後に作る
+    alb.ingress.kubernetes.io/scheme: internet-facing       # インターネット公開
+    alb.ingress.kubernetes.io/target-type: ip               # Pod の IP へ直接ルーティング(VPC CNI)
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"           # HTTP は HTTPS へリダイレクト
+    # 証明書 ARN は overlay/prod の patch で付与する
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          # Prefix は長いものが優先されるため /api が / より先に評価される(記載順非依存)
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000

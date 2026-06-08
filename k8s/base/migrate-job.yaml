@@ -1,0 +1,33 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate
+  annotations:
+    # Sync phase で実行する hook。db(wave 0) の後、アプリ(wave 2) の前に走らせる
+    argocd.argoproj.io/hook: Sync
+    # マイグレーションが成功したら Job を削除して、次回の sync で再実行できるようにする
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+    # phase 内での順序。db(0) の後、backend/frontend(2) の前に実行する
+    argocd.argoproj.io/sync-wave: '1'
+spec:
+  backoffLimit: 2
+  # image 不正などで Pod が起動できないと Job は無言でハングする(起動前の失敗は backoffLimit で数えられない)。
+  # 一定時間で Job を DeadlineExceeded 失敗させ、sync を止めたままにしない安全網。
+  activeDeadlineSeconds: 300
+  template:
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secret   # private GHCR から image を pull するための認証
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: web-tutorial-v2-backend
+          command:
+            - sh
+            - -c
+            - uv run alembic upgrade head && uv run python -m app.seed
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secret

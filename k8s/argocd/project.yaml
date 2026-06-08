@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: web-tutorial
+  namespace: argocd   # ArgoCD の設定は ArgoCDがデプロイされている namespace に作成
+spec:
+  description: web-tutorial アプリ専用プロジェクト
+  sourceRepos:
+    # この repo からのデプロイだけを許可する
+    - https://github.com/YOUR_GITHUB_USERNAME/web-tutorial-v2.git   # <- 変更: 自分の private リポジトリの URL
+  destinations: # デプロイ先のクラスタとnamespace
+    - server: https://kubernetes.default.svc
+      namespace: web-tutorial
+  clusterResourceWhitelist:
+    # Clusterスコープの操作は Namespace のみ許可
+    - group: ''
+      kind: Namespace
+  namespaceResourceWhitelist:
+    # web-tutorial namespace 内のリソースはすべて許可する
+    - group: '*'
+      kind: '*'
