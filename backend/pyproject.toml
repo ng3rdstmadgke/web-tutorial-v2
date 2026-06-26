@@ -11,7 +11,7 @@ dependencies = [
     "pyjwt~=2.13.0",
     "python-dotenv~=1.2.2",
     "sqlalchemy~=2.0.49",
-    "structlog~=25.5.0",
+    "structlog~=26.1.0",
 ]
 
 [dependency-groups]
