@@ -1,30 +1,30 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: web-tutorial   # 全リソースを web-tutorial namespace に配置する
+namespace: web-tutorial
 
 resources:
-  - ../../base
+- ../../base
 
 # base のプレースホルダ image 名を GHCR の実イメージ + タグに置き換える。
 # newTag のデフォルトは latest。CI の deploy ジョブが sha-<コミット> に書き換える。
 # backend の置換は backend Deployment と migrate Job の両方に効く(同じ image 名のため)。
 images:
-  - name: web-tutorial-v2-backend
-    newName: ghcr.io/YOUR_GITHUB_USERNAME/web-tutorial-v2-backend  # <- 変更: 自分のGHCRのURL
-    newTag: latest
-  - name: web-tutorial-v2-frontend
-    newName: ghcr.io/YOUR_GITHUB_USERNAME/web-tutorial-v2-frontend  # <- 変更: 自分のGHCRのURL
-    newTag: latest
+- name: web-tutorial-v2-backend
+  newName: ghcr.io/ng3rdstmadgke/web-tutorial-v2-backend
+  newTag: sha-6173ff8
+- name: web-tutorial-v2-frontend
+  newName: ghcr.io/ng3rdstmadgke/web-tutorial-v2-frontend
+  newTag: sha-6173ff8
 
 replicas:
-  - name: backend
-    count: 2
-  - name: frontend
-    count: 2
+- count: 2
+  name: backend
+- count: 2
+  name: frontend
 
 patches:
-  - path: ingress-patch.yaml
-    target:
-      kind: Ingress
-      name: web-tutorial
+- path: ingress-patch.yaml
+  target:
+    kind: Ingress
+    name: web-tutorial
