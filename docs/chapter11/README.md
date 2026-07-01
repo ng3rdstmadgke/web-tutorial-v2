@@ -7,7 +7,8 @@
 - **[`openapi-typescript`](https://openapi-ts.dev/)** で FastAPI が出力する OpenAPI 仕様から TypeScript の型を自動生成できます (`pnpm gen:api`)
 - **[`openapi-fetch`](https://openapi-ts.dev/openapi-fetch/)** で **型安全な fetch クライアント** を実装し、backend を呼べます
 - Server Component は **コンテナ名で backend に直接**、Client Component は **nginx 経由の同一オリジン(相対 `/api`)** で呼ぶ、という使い分けを実装できます
-- **[React Hook Form](https://react-hook-form.com/)** と **[Zod](https://zod.dev/)** でフォームのバリデーションを書けます
+- **controlled component** (`useState` + `value` + `onChange`)でフォームの入力値を管理できます
+- **[Zod](https://zod.dev/)** でスキーマを定義し、送信時のバリデーションを書けます
 - **[shadcn/ui の `<Field>`](https://ui.shadcn.com/docs/components/base/field)** で見た目を整えたログインページを作れます
 - **[Next.js Proxy](https://nextjs.org/docs/app/api-reference/file-conventions/proxy)** で Cookie ベースの認証ガードを実装できます
 
@@ -314,7 +315,7 @@ cd $PROJECT_DIR/frontend
 pnpm add 'zod@^4.4.3' '@t3-oss/env-nextjs@^0.13.11'
 ```
 
-依存として `zod` も必要ですが、 Section 4 (React Hook Form + Zod) で改めて追加するので、 ここでは `@t3-oss/env-nextjs` だけで OK です。
+依存として `zod` も必要ですが、 Section 4 (Zod でフォームのバリデーションを書く) で改めて使うので、 ここで一緒にインストールしておきます。
 
 #### `src/lib/env.ts` を作成
 
@@ -440,31 +441,74 @@ if (error) {
 
 ---
 
-## 4. React Hook Form + Zod の基本
+## 4. Zod でフォームのバリデーションを書く
 
-ログインページを作る前に、フォームライブラリの基本を押さえます。
+### 4.1 controlled component (入力値を state で管理する)
 
-### 4.1 インストール
+フォームの入力欄は、Chapter 9 で扱った `useState` を使って **controlled component (制御コンポーネント)** として実装します。`<input>` の `value` にstateを渡し、`onChange` でそのstateを更新する、という組み方です。
 
-```bash
-cd $PROJECT_DIR/frontend
-pnpm add 'react-hook-form@^7.75.0' '@hookform/resolvers@^5.2.2'
+```tsx
+import { useState } from "react";
+
+function ExampleForm() {
+  const [username, setUsername] = useState("");
+
+  return (
+    <input
+      value={username} // 表示される値は必ず state と一致する
+      onChange={(e) => setUsername(e.target.value)} // 入力ごとに state を更新する
+    />
+  );
+}
 ```
 
-| パッケージ | 役割 |
-|---|---|
-| `react-hook-form` | フォームの状態管理([公式](https://react-hook-form.com/)) |
-| `zod` | スキーマ定義 + バリデーション([公式](https://zod.dev/))|
-| `@hookform/resolvers` | React Hook Form と Zod を繋ぐアダプター |
+- **`value={username}`**: 入力欄に表示される値を state が握ります。state を更新しない限り、表示は変わりません
+- **`onChange`**: キー入力のたびに発火し、`e.target.value` (入力欄の最新の値) で state を更新します
 
-### 4.2 Zod スキーマと型推論
+この組み方だと、**「今の入力値」が常に state という 1 つの場所にある** ので、送信前のバリデーションや、送信中の disable 制御が素直に書けます。
 
-Zod は **「ランタイムでのバリデーション + 静的な型」を同じ定義で書ける** ライブラリです：
+複数フィールドを持つフォームでは、1 つの state にまとめて持たせます。
+
+```tsx
+type LoginFormValues = { username: string; password: string };
+
+const [values, setValues] = useState<LoginFormValues>({
+  username: "",
+  password: "",
+});
+
+// username だけを更新し、他のフィールドは前の値を引き継ぐ
+<input
+  value={values.username}
+  onChange={(e) => setValues((v) => ({ ...v, username: e.target.value }))}
+/>
+```
+
+フォームの送信は **`<form>` の `onSubmit`** で扱います。ブラウザの既定の動作(ページ遷移して送信)を止めるために、必ず `event.preventDefault()` を呼びます。
+
+```tsx
+<form
+  onSubmit={(e) => {
+    e.preventDefault(); // ページ遷移させず、この中で送信処理を行う
+    // ここで values を使って API を呼ぶ
+  }}
+>
+  {/* ... */}
+</form>
+```
+
+> [!TIP] 公式ドキュメント:
+> - [`<input>` | React](https://react.dev/reference/react-dom/components/input) … controlled input の仕組み
+> - [Reacting to input with state | React](https://react.dev/learn/reacting-to-input-with-state)
+
+### 4.2 Zod によるバリデーション
+
+**[Zod](https://zod.dev/)** は、**「ランタイムでのバリデーション + 静的な型」を同じ定義で書ける** スキーマライブラリです。フォームの入力値がスキーマを満たすかどうかを、送信時に検証します。
 
 ```ts
 import { z } from "zod";
 
-//オブジェクトのスキーマを定義
+// オブジェクトのスキーマを定義
 const loginSchema = z.object({
   // .min(1, "..."): 最小文字数のバリデーション + 失敗時のメッセージ
   username: z.string().min(1, "ユーザー名は必須です"),
@@ -475,133 +519,37 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>; // -> { username: string; password: string }
 ```
 
+検証には **`safeParse`** を使います。例外を投げる `parse` と違い、`safeParse` は成功・失敗のどちらでも `{ success, data | error }` という形の値を返すので、`if` 文で分岐しやすくなります。
+
+```ts
+const result = loginSchema.safeParse(values);
+
+if (!result.success) {
+  // result.error.issues: [{ path: ["username"], message: "ユーザー名は必須です" }, ...]
+  // path[0] (フィールド名) をキーにして、フィールドごとのエラーメッセージに変換する
+  const errors: Partial<Record<keyof LoginFormValues, string>> = {};
+  for (const issue of result.error.issues) {
+    errors[issue.path[0] as keyof LoginFormValues] = issue.message;
+  }
+  // errors を state に入れて画面に表示する
+} else {
+  // result.data: スキーマを通過した値 (型は LoginFormValues に絞り込まれている)
+}
+```
+
 > [!TIP] 公式ドキュメント:
 > - [Defining schemas | Zod](https://zod.dev/api) … 型指定
 > - [Customizing errors | Zod](https://zod.dev/error-customization) … カスタムエラーメッセージ
-
-
-### 4.3 React Hook Form の基本
-
-> [!TIP] 公式ドキュメント:
-> - [useForm | React Hook Form](https://www.react-hook-form.com/api/useform/)
-
-
-**[React Hook Form](https://react-hook-form.com/)** は、フォームの **入力値・エラー・送信状態** を管理するための React ライブラリです。 React Hook Form は **`useForm()` 1 つで `control` (フィールド接続のハンドル) / `handleSubmit` (送信ハンドラ) / `formState` (エラーや送信中フラグ) をまとめて提供** してくれます。
-
-
-> [!TIP] 特徴:
-> - **非制御コンポーネント (uncontrolled) ベース** … 内部で `ref` を使って DOM の値を直接読み書きするので、 入力のたびに親コンポーネントが再レンダリングされません。 大きなフォームでもパフォーマンスが落ちにくい
-> - **バリデーションを resolver で外部化** … Zod / Valibot / Arktype 等のスキーマライブラリを **`resolver` 経由で差し込む** だけで、 バリデーションができます。 Zod v4 は **[Standard Schema](https://standardschema.dev/) 仕様** に準拠しているため、 `standardSchemaResolver` で繋ぎます。Standard Schema は Zod v4 / Valibot / Arktype など複数のスキーマライブラリが共通で実装する規格で、 1 つの resolver でどれにも切り替えられるのが利点です
-> - **送信状態の管理** … `formState.isSubmitting` / `isDirty` / `isValid` などのフラグが揃っていて、「送信中はボタンを無効化」のような UI が簡単に書けます
-
-```ts
-import { useForm } from "react-hook-form";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Field,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
-
-export function LoginForm() {
-  // `control` (フィールド接続のハンドル) / `handleSubmit` (送信ハンドラ) / `formState` (エラーや送信中フラグ) がまとめられたオブジェクト
-  const form = useForm<LoginFormValues>({
-    // standardSchemaResolver: zodのスキーマを resolver(バリデーションを行うオブジェクト)に変換する
-    resolver: standardSchemaResolver(loginSchema),
-    defaultValues: { username: "", password: "" },
-  });
-
-  const onSubmit = (values: LoginFormValues) => {
-    // formの送信処理
-  };
-
-  return (
-    // form.handleSubmit: バリデーション通過時にだけ onSubmit を呼ぶ submit ハンドラを返す
-    <form
-      onSubmit={form.handleSubmit(onSubmit)}
-      noValidate
-    >
-      <FieldGroup>
-        {/* username の入力欄 */}
-        <Controller
-          control={form.control} // どのフォームに属するか
-          name="username"        // どのフィールドか (Zod スキーマのキーと一致)
-          render={({ field, fieldState }) => (
-            // render は描画関数。 React Hook Form が用意した「フィールド接続部品」が引数に来る
-            <Input {...field} />
-          )}
-        />
-
-        {/* password の入力欄 */}
-        <Controller
-          control={form.control}
-          name="password"
-          render={({ field, fieldState }) => (
-            <Input {...field} />
-          )}
-        />
-      </FieldGroup>
-      <Button
-        type="submit"
-        className="w-full"
-        disabled={form.formState.isSubmitting} // 送信中は二重送信防止のために無効化
-      >
-        {form.formState.isSubmitting ? "送信中..." : "ログイン"}
-      </Button>
-    </form>
-  );
-}
-
-```
-
-
-#### `Controller` と `form.control` の役割
-
-> [!TIP] 公式ドキュメント:
-> - [Controller | React Hook Form](https://www.react-hook-form.com/api/usecontroller/controller/)
-
-`useForm()` が返す `form` オブジェクトには、`handleSubmit` / `formState` のほかに **`control`** というプロパティがあります。`control` は「**このフォームの状態を読み書きするためのハンドル**」で、 これを各フィールドに渡すことで、 React Hook Form は「どのフォームのどのフィールドか」を識別します。
-
-**`Controller`** は、 **1フィールド分の React Hook Form 接続を担う React コンポーネント** です。たとえば「`username` フィールドを、 shadcn の `<Input>` に繋ぎたい」場合は以下のように記述します
-
-```tsx
-<Controller
-  control={form.control}       // どのフォームに属するか
-  name="username"              // どのフィールドか (Zod スキーマのキーと一致)
-  render={({ field, fieldState }) => (
-    // render は描画関数。 React Hook Form が用意した「フィールド接続部品」が引数に来る
-    <Input {...field} />
-  )}
-/>
-```
-
-Controllerの属性の意味：
-
-| 属性 | 役割 |
-|---|---|
-| **`control`** | `useForm()` が返した `form.control` を渡す。`Controller` がどのフォームに属するかを React Hook Form に伝える |
-| **`name`** | フィールド名。Zod スキーマで定義したキー (`username` / `password`) と一致させる。型推論もここで効く |
-| **`render`** | 「このフィールドの UI をどう描画するか」を返す関数。引数の `field` と `fieldState` を使って入力欄を組み立てる |
-
-`render` の引数：
-
-| 引数 | 中身 | 主な使い道 |
-|---|---|---|
-| **`field`** | `{ name, value, onChange, onBlur, ref }` のセット | `<Input {...field} />` のように **そのまま入力欄に spread** すると、 入力値が React Hook Form の state に自動で書き込まれる |
-| **`fieldState`** | `{ invalid, error, isDirty, isTouched }` | バリデーション結果。 エラー表示の出し分け (`fieldState.invalid` / `fieldState.error`) |
+> - [`.safeParse()` | Zod](https://zod.dev/api#safeparse)
 
 ---
 
 ## 5. shadcn/ui の `<Field>` を追加
 
-shadcn/ui の **`Field`** コンポーネント群は、フォームの **「ラベル + 入力 + 説明文 + エラー」** をひとまとめに扱うためのプリミティブ群です。React Hook Form の `Controller` と組み合わせると、宣言的でアクセシビリティの整ったフォームを書けます。
+shadcn/ui の **`Field`** コンポーネント群は、フォームの **「ラベル + 入力 + 説明文 + エラー」** をひとまとめに扱うためのプリミティブ群です。`data-invalid` 属性でエラー状態の見た目を切り替えられ、アクセシビリティの整ったフォームを宣言的に書けます。
 
 > [!TIP] 公式ドキュメント:
 > - [Field | shadcn/ui](https://ui.shadcn.com/docs/components/base/field)
-> - [React Hook Form ガイド | shadcn/ui](https://ui.shadcn.com/docs/forms/react-hook-form)
 > - [Input | shadcn/ui](https://ui.shadcn.com/docs/components/base/input)
 
 ### 5.1 コンポーネントを追加
@@ -649,7 +597,7 @@ pnpm dlx 'shadcn@^4.7.0' add input --yes
 | ファイル | 役割 | コンポーネントの種類 |
 |---|---|---|
 | `src/app/login/page.tsx` | URL `/login` のエントリポイント。メタデータ設定と `<LoginForm />` の配置だけ | **Server Component** |
-| `src/app/login/login-form.tsx` | フォーム本体(Zod スキーマ・useForm・API 呼び出し) | **Client Component** |
+| `src/app/login/login-form.tsx` | フォーム本体(Zod スキーマ・controlled component・API 呼び出し) | **Client Component** |
 
 > [!NOTE] 設計判断: なぜ 2 ファイルに分けるのか
 > - **Client Component の境界を最小化する**: `'use client'` は「ここから先はクライアント側で動く」という境界線です。ページ全体に当てるとそのメリット(SSR されるツリーが減る)が失われるので、 **本当にインタラクティブな部分だけ** を Client Component に閉じ込めます
@@ -700,9 +648,7 @@ export default function LoginPage() {
 // フォーム入力 (state) を扱うので Client Component にする
 "use client";
 
-import { useState } from "react";
-import { Controller, useForm } from "react-hook-form";
-import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
+import { useState, type SubmitEvent } from "react";
 import { z } from "zod";
 
 import { apiClient } from "@/lib/api/client";
@@ -722,23 +668,41 @@ const loginSchema = z.object({
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
+// safeParse が失敗したときの、フィールドごとのエラーメッセージ
+type FieldErrors = Partial<Record<keyof LoginFormValues, string>>;
 
 // page.tsx から import { LoginForm } で呼び出される (名前付き export)
 export function LoginForm() {
-  const [submitError, setSubmitError] = useState<string | null>(null);
-
-  const form = useForm<LoginFormValues>({
-    resolver: standardSchemaResolver(loginSchema),
-    defaultValues: { username: "", password: "" },
+  const [values, setValues] = useState<LoginFormValues>({
+    username: "",
+    password: "",
   });
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const onSubmit = async (values: LoginFormValues) => {
+  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
     setSubmitError(null);
 
+    // 送信時にスキーマでバリデーションする。失敗したらフィールドエラーを表示して終了
+    const result = loginSchema.safeParse(values);
+    if (!result.success) {
+      const errors: FieldErrors = {};
+      for (const issue of result.error.issues) {
+        errors[issue.path[0] as keyof LoginFormValues] = issue.message;
+      }
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
+
+    setIsSubmitting(true);
     // openapi-fetch クライアント。body の型は schema.ts の UserLogin に自動で絞り込まれる
     const { data, error } = await apiClient.POST("/api/v1/login", {
-      body: values,
+      body: result.data,
     });
+    setIsSubmitting(false);
 
     if (error) {
       // 401 (認証失敗) や 422 (バリデーション失敗) など
@@ -761,57 +725,46 @@ export function LoginForm() {
   };
 
   return (
-    <form
-      onSubmit={form.handleSubmit(onSubmit)}
-      className="space-y-4"
-      noValidate
-    >
+    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
       <FieldGroup>
-        <Controller
-          control={form.control}
-          name="username"
-          render={({ field, fieldState }) => (
-            // data-invalid: エラー時に "true"
-            // Tailwind の data-[invalid=true]: で見た目切替
-            <Field data-invalid={fieldState.invalid}>
-              {/* htmlFor で <Input id="..."> と紐付け、スクリーンリーダーがラベルと入力をペア認識できるように */}
-              <FieldLabel htmlFor="login-username">ユーザー名</FieldLabel>
-              <Input
-                id="login-username"
-                // ブラウザのパスワードマネージャがフォームを認識するためのヒント
-                autoComplete="username"
-                // aria-invalid: 支援技術 (スクリーンリーダー) 向けにエラー状態を伝える
-                // data-invalid (見た目用) と役割を分けて両方付ける
-                aria-invalid={fieldState.invalid}
-                {...field}
-              />
-              {fieldState.invalid && (
-                // errors は配列で渡す (複数エラーをまとめて表示できる API のため)
-                <FieldError errors={[fieldState.error]} />
-              )}
-            </Field>
+        {/* data-invalid: エラー時に true。Tailwind の data-[invalid=true]: で見た目切替 */}
+        <Field data-invalid={!!fieldErrors.username}>
+          {/* htmlFor で <Input id="..."> と紐付け、スクリーンリーダーがラベルと入力をペア認識できるように */}
+          <FieldLabel htmlFor="login-username">ユーザー名</FieldLabel>
+          <Input
+            id="login-username"
+            // ブラウザのパスワードマネージャがフォームを認識するためのヒント
+            autoComplete="username"
+            // aria-invalid: 支援技術 (スクリーンリーダー) 向けにエラー状態を伝える
+            // data-invalid (見た目用) と役割を分けて両方付ける
+            aria-invalid={!!fieldErrors.username}
+            value={values.username}
+            onChange={(e) =>
+              setValues((v) => ({ ...v, username: e.target.value }))
+            }
+          />
+          {fieldErrors.username && (
+            // errors は配列で渡す (複数エラーをまとめて表示できる API のため)
+            <FieldError errors={[{ message: fieldErrors.username }]} />
           )}
-        />
+        </Field>
 
-        <Controller
-          control={form.control}
-          name="password"
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor="login-password">パスワード</FieldLabel>
-              <Input
-                id="login-password"
-                type="password"
-                autoComplete="current-password"
-                aria-invalid={fieldState.invalid}
-                {...field}
-              />
-              {fieldState.invalid && (
-                <FieldError errors={[fieldState.error]} />
-              )}
-            </Field>
+        <Field data-invalid={!!fieldErrors.password}>
+          <FieldLabel htmlFor="login-password">パスワード</FieldLabel>
+          <Input
+            id="login-password"
+            type="password"
+            autoComplete="current-password"
+            aria-invalid={!!fieldErrors.password}
+            value={values.password}
+            onChange={(e) =>
+              setValues((v) => ({ ...v, password: e.target.value }))
+            }
+          />
+          {fieldErrors.password && (
+            <FieldError errors={[{ message: fieldErrors.password }]} />
           )}
-        />
+        </Field>
       </FieldGroup>
 
       {submitError && (
@@ -824,17 +777,20 @@ export function LoginForm() {
         type="submit"
         className="w-full"
         // 送信中は二重送信防止のために無効化
-        disabled={form.formState.isSubmitting}
+        disabled={isSubmitting}
       >
-        {form.formState.isSubmitting ? "送信中..." : "ログイン"}
+        {isSubmitting ? "送信中..." : "ログイン"}
       </Button>
     </form>
   );
 }
 ```
 
+> [!NOTE] `SubmitEvent`について
+> このバージョンの React では、フォーム送信イベントの型は `FormEvent` ではなく **`SubmitEvent`** を使います(`FormEvent` は非推奨扱いになっています)。
+
 > [!TIP] 公式ドキュメント:
-> - [Controller | React Hook Form](https://www.react-hook-form.com/api/usecontroller/controller/)
+> - [`<input>` | React](https://react.dev/reference/react-dom/components/input)
 > - [useRouter | Next.js](https://nextjs.org/docs/app/api-reference/functions/use-router)
 ---
 
@@ -1384,8 +1340,9 @@ PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c 
 - **`openapi-fetch` で型安全な fetch クライアント**: `paths` を渡して `apiClient.POST("/api/v1/login", { body })` のように呼ぶと、 backend の Pydantic スキーマと一致した型補完が効く
 - **Server / Client での API アクセス**: Server Component は `INTERNAL_API_URL`(コンテナ名)で backend に直接、Client Component は **nginx 経由の同一オリジン**で相対 `/api/...`。`typeof window === "undefined"` で切り替え。同一オリジンなので **CORS は不要**
 - **環境変数は `INTERNAL_API_URL` のみ**: `frontend/.env`(compose の `env_file`)で管理。クライアント側は相対パスなのでブラウザ公開用の環境変数は不要
-- **React Hook Form + Zod v4 + Standard Schema**: スキーマ 1 つで「ランタイムバリデーション + TypeScript の型」を両取り。`useForm({ resolver: standardSchemaResolver(schema) })` パターン。Standard Schema 規格経由なので Zod 以外のライブラリにも乗り換えやすい
-- **shadcn/ui の `<Field>` 系**: `Field` / `FieldLabel` / `FieldError` / `FieldGroup` などのプリミティブを、React Hook Form の `Controller` と組み合わせて宣言的にフォームを組む。shadcn v4 の base スタイルでは `<Form>` ラッパーは廃止され、`Controller` + `Field` パターンが標準
+- **controlled component**: `useState` で入力値をまとめて持ち、`value` + `onChange` で入力欄と同期する。送信は `<form onSubmit>` + `event.preventDefault()`
+- **Zod によるバリデーション**: スキーマ 1 つで「ランタイムバリデーション + TypeScript の型」を両取り。送信時に `schema.safeParse(values)` を呼び、失敗したら `result.error.issues` をフィールドごとのエラーメッセージに変換する
+- **shadcn/ui の `<Field>` 系**: `Field` / `FieldLabel` / `FieldError` / `FieldGroup` などのプリミティブを、`data-invalid` 属性と組み合わせて宣言的にフォームを組む
 - **shadcn/ui v4 base-nova は base-ui ベース**: 内部実装が [base-ui](https://base-ui.com/) で、 子要素の差し替えは `asChild` ではなく **`render` プロパティ** を使う (`<DropdownMenuTrigger render={<Button />}>{children}</DropdownMenuTrigger>` のように書く)。 また `DropdownMenuLabel` / `DropdownMenuItem` は **`<DropdownMenuGroup>` の中** に置く必要がある
 - **ログインページの実装**: `page.tsx` (Server Component。`metadata` + `<LoginForm />` だけ) と `login-form.tsx` (Client Component。フォーム本体) に **コロケーション** で分割。`'use client'` をフォーム本体に閉じ込め、Server Component のメリットを活かす配置
 - **Cookie ベースの認証**: `apiClient.POST("/api/v1/login")` を叩くと backend が `Set-Cookie` で `access_token` を発行。frontend は何も保存せず、以降のリクエストでブラウザが自動送信する
@@ -1398,4 +1355,4 @@ PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c 
 
 [Chapter 12: CRUD 画面の実装 ->](../chapter12/README.md)
 
-Chapter 12 では、Item・User の CRUD 画面を実装します。Server Component で初期データを取得し、Client Component から `TanStack Query` で更新・再取得を扱う構成にしていきます。
+Chapter 12 では、Item・User の CRUD 画面を実装します。Server Component で一覧データを取得し、Client Component から backend を直接呼んで作成・編集・削除を行い、`router.refresh()` で一覧を最新化する構成にしていきます。

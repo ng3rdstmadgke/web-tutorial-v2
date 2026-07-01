@@ -421,7 +421,7 @@ test("アイテムを作成・編集・削除できる", async ({ page }) => {
   await editDialog.getByRole("button", { name: "保存" }).click();
   await expect(row).toContainText(updatedContent);
 
-  // --- 削除(楽観的更新で即座に消える)---
+  // --- 削除 ---
   await row.getByRole("button", { name: "削除" }).click();  // 特定した行に対して削除操作
   
   await page
